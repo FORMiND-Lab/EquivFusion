@@ -1,2 +1,2 @@
 # EquivFusion
-EquivFusion: Unifying Equivalence Checking from Algorithms to Netlists
+EquivFusion: Unifying Formal Verification from Algorithms to Netlists for High-Efficiency Signoff
