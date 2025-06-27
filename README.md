@@ -2,5 +2,5 @@
 EquivFusion: Unifying Formal Verification from Algorithms to Netlists for High-Efficiency Signoff
 
 # Contributors
-- taomengxia    <taomengxia@nctieda.com>
 - Baoqiz
+- Mengxia Tao   <taomengxia@nctieda.com>
