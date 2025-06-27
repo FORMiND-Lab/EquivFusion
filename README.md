@@ -3,3 +3,4 @@ EquivFusion: Unifying Formal Verification from Algorithms to Netlists for High-E
 
 # Contributors
 - taomengxia    <taomengxia@nctieda.com>
+- Baoqiz
