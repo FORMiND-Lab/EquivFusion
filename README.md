@@ -1,7 +1,7 @@
 <p align="center">
   <img src="docs/logo.png" height="240" alt="玄松 EquivFusion Logo">
 </p>
-<h2 align="center">玄松 · EquivFusion</h2>
+<h2 align="center">EquivFusion from 玄松</h2>
 <p align="center"><em>深理如松 · 验证无声</em></p>
 <p align="center"><em>Slient as Pine, Precise as Logic</em></p>
 
