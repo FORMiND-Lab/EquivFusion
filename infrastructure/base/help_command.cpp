@@ -1,0 +1,56 @@
+#include "infrastructure/base/command.h"
+#include "infrastructure/base/commandManager.h"
+#include "infrastructure/log/log.h"
+
+XUANSONG_NAMESPACE_HEADER_START
+
+struct HelpCmd : public Command {
+public: 
+    HelpCmd() : Command("help", "display help information") {}
+    ~HelpCmd() override = default;
+
+    HelpCmd(const HelpCmd &) = delete;
+    HelpCmd &operator=(const HelpCmd &) = delete;
+
+    void preExecute() override {
+        
+    }
+
+    void execute(const std::vector<std::string> &args) override {
+        CommandManager *commandMgr = CommandManager::getInstance();
+
+        if (args.empty()) {
+            std::unordered_map<std::string, Command *> registeredCommands = commandMgr->getRegisteredCommands();
+            log("\n");
+            for (auto &command : registeredCommands) {
+                log("    %-30s %s\n", command.first.c_str(), command.second->getDescription().c_str());
+            }
+            log("\n");
+        } else {
+            std::string commandName = args[0];
+            if (commandMgr->hasCommand(commandName)) { 
+                Command *command = commandMgr->getCommand(commandName);
+                command->help();
+            } else {
+                log("Error: Command '%s' not found\n", commandName.c_str());
+            }
+        }
+    }
+
+    void postExecute() override {
+        
+    }
+
+    void help() override {
+        log("\n");
+        log("    help ------------------- list all commands\n");
+        log("    help <command> --------- print help information for given command\n");
+        log("\n");
+    }
+
+
+} helpCmd;
+
+XUANSONG_NAMESPACE_HEADER_END
+
+

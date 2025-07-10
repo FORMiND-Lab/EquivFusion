@@ -12,3 +12,13 @@ EquivFusion: Unifying Formal Verification from Algorithms to Netlists for High-E
 - Min Li
 - Baoqiz
 - Mengxia Tao   <taomengxia@nctieda.com>
+
+# Build
+Linux
+'''
+cd EquivFusion
+mkdir build
+cd build
+cmake .. -G Ninja
+ninja
+'''
