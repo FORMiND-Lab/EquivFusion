@@ -1,0 +1,35 @@
+name: Pre-Check
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches:
+      - main
+
+jobs:
+  Build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v2
+
+      - name: Setup Build Environment
+        uses: ./.github/actions/setup-build-env
+
+      - name: Build
+        uses: ./.github/actions/build
+        with:
+          build-type: 'Release'
+
+  Run-Integration-Tests:
+    needs: Build  # run after Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v2
+
+      - name: Run Integration Tests
+        uses: ./.github/actions/run-integration-tests
+        with:
+          log-dir: "log"
+

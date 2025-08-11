@@ -1,0 +1,30 @@
+name: Run Integration Tests
+description: 'Runs integration tests'
+
+inputs:
+  log-dir:
+    description: 'log directory'
+    default: 'log'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Download Build Artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: build-artifacts
+        path: build
+
+    - name: Run Integration Tests
+      shell: bash
+      run: |
+        echo "Run Integration Tests"
+        ls build/bin
+        python3 --version
+        python3 test/integration_tests/scripts/main.py --cases-dir=test/integration_tests/cases --tool-dir=./build/bin --log-dir=${{ inputs.log-dir }}
+
+    - name: Upload Tests Artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: integration-tests-artifacts
+        path: ${{ inputs.log-dir }}
