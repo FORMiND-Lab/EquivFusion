@@ -52,14 +52,27 @@ static char **readline_completion (const char *text, int start, int) {
     return NULL;
 }
 
+void runCommand(std::string commandStr) {  
+    std::string commandName = nextToken(commandStr, " \t\n\r");
+    std::string token = nextToken(commandStr, " \t\n\r");
+    std::vector<std::string> args;
+    
+    while (!token.empty()) {
+        args.push_back(token);
+        token = nextToken(commandStr, " \t\n\r");
+    }
+
+    CommandManager *commandMgr = CommandManager::getInstance();
+    commandMgr->executeCommand(commandName, args);
+}
+
 void runShell() { 
+    XuanSong::logEquivFusionBanner();
+
     // initilize the readline
     rl_readline_name = (char *)"EquivFusion";
     rl_attempted_completion_function = readline_completion;
     rl_basic_word_break_characters = (char *)" \t\n";
-
-    CommandManager *commandMgr = CommandManager::getInstance();
-    commandMgr->registerCommand();
 
     char *command = NULL;
     while ((command = readline("EquivFusion> ")) != NULL) {
@@ -78,17 +91,8 @@ void runShell() {
             command = NULL;
             break;
         }
-        
-        std::string commandName = nextToken(commandStr, " \t\n\r");
-        std::string token = nextToken(commandStr, " \t\n\r");
-        std::vector<std::string> args;
-        
-        while (!token.empty()) {
-            args.push_back(token);
-            token = nextToken(commandStr, " \t\n\r");
-        }
 
-        commandMgr->executeCommand(commandName, args);
+        runCommand(commandStr);
 
         free(command);
         command = NULL;
