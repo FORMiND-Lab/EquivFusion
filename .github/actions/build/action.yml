@@ -14,13 +14,5 @@ runs:
       run: |
         mkdir build
         cd build
-        pwd
         cmake .. -DCMAKE_BUILD_TYPE=${{ inputs.build-type }}
-        make
-
-    - name: Upload Build Artifacts
-      uses: actions/upload-artifact@v4
-      with:
-        name: build-artifacts
-        path: build
-
+        make -j$procs

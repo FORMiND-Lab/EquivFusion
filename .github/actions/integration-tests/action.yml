@@ -9,18 +9,15 @@ inputs:
 runs:
   using: 'composite'
   steps:
-    - name: Download Build Artifacts
-      uses: actions/download-artifact@v4
+    - name: Build
+      uses: ./.github/actions/build
       with:
-        name: build-artifacts
-        path: build
+        build-type: 'Release'
 
     - name: Run Integration Tests
       shell: bash
       run: |
         echo "Run Integration Tests"
-        ls build/bin
-        python3 --version
         python3 test/integration_tests/scripts/main.py --cases-dir=test/integration_tests/cases --tool-dir=./build/bin --log-dir=${{ inputs.log-dir }}
 
     - name: Upload Tests Artifacts

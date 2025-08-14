@@ -9,27 +9,31 @@ on:
 jobs:
   Build:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        build-type: [ Debug, Release ]
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
-      - name: Setup Build Environment
-        uses: ./.github/actions/setup-build-env
+      - name: Setup Environment
+        uses: ./.github/actions/setup-env
 
       - name: Build
         uses: ./.github/actions/build
         with:
-          build-type: 'Release'
+          build-type: ${{ matrix.build-type }}
 
   Run-Integration-Tests:
-    needs: Build  # run after Build
+    needs: [Build]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
+
+      - name: Setup Environment
+        uses: ./.github/actions/setup-env
 
       - name: Run Integration Tests
-        uses: ./.github/actions/run-integration-tests
-        with:
-          log-dir: "log"
+        uses: ./.github/actions/integration-tests
 
