@@ -1,4 +1,4 @@
 # CI
 ## Pre-Check  <=> pre-check.yaml
-- Build
+- Build [ Debug, Release ]
 - Integration-Tests
