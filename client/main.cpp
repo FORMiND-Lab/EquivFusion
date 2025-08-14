@@ -1,13 +1,44 @@
 #include <iostream>
+#include "infrastructure/base/commandManager.h"
 #include "infrastructure/utils/common_functions.h"
 #include "infrastructure/log/log.h"
+#include "libs/cxxopts/cxxopts.hpp"
 
 
 int main(int argc, char** argv) { 
-    XuanSong::logEquivFusionBanner();
+    bool run_shell = true;
 
-    XuanSong::runShell();
+    cxxopts::Options options(argv[0], "EquivFusion -- Silent as Pine, Precise as Logic");
+    options.add_options("operation") \
+        ("H", "print the command list") \
+        ("h,help", "print this help message.");
 
+    XuanSong::CommandManager *commandMgr = XuanSong::CommandManager::getInstance();
+    commandMgr->registerCommand();
+
+    try {
+        auto result = options.parse(argc, argv);
+
+        if (result.count("H")) { 
+            XuanSong::runCommand("help");
+            run_shell = false;
+        }
+
+        if (result.count("h")) { 
+            XuanSong::log("%s\n", options.help().c_str());
+            run_shell = false;
+        }
+    } catch (const cxxopts::exceptions::parsing& e) {
+        XuanSong::log("Error parsing options: %s\n", e.what());
+        XuanSong::log("Run '%s --help' for help.\n", argv[0]);
+        exit(1);
+	}
+
+
+    if (run_shell) { 
+        XuanSong::runShell();
+    }
+    
     return 0;
 }
 

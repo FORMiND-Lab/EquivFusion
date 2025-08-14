@@ -1,0 +1,57 @@
+#!/usr/bin/bash
+
+SCRIPT_PATH=$(realpath "$0")
+SCRIPT_DIR=$(dirname "$SCRIPT_PATH")
+ROOT_DIR="$SCRIPT_DIR/.."
+
+CMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE:-"Release"}
+CIRCT_REDOWNLOAD=${CIRCT_REDOWNLOAD:-"false"}
+
+CIRCT_PROJECT_PATH=${CIRCT_PROJECT_PATH:-"$ROOT_DIR/circt"}
+CIRCT_BUILD_PATH=${CIRCT_BUILD_PATH:-"$CIRCT_PROJECT_PATH/build"}
+CIRCT_PROJECT_URL=${CIRCT_PROJECT_URL:-"https://github.com/llvm/circt.git"}
+
+CIRCT_BUILD_ARGS=(
+    -G Ninja
+    -DMLIR_DIR="$CIRCT_PROJECT_PATH/llvm/build/lib/cmake/mlir"
+    -DLLVM_DIR="$CIRCT_PROJECT_PATH/llvm/build/lib/cmake/llvm"
+    -DLLVM_ENABLE_ASSERTIONS=ON
+    -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+    -DCMAKE_BUILD_TYPE="$CMAKE_BUILD_TYPE"
+    -B"$CIRCT_BUILD_PATH" "$CIRCT_PROJECT_PATH"
+)
+
+if [ "$CIRCT_REDOWNLOAD" == "true" ] && [ -e "$CIRCT_PROJECT_PATH" ]; then
+    rm -rf "$CIRCT_PROJECT_PATH"
+fi
+
+if [ ! -e "$CIRCT_PROJECT_PATH" ]; then
+    echo "Cloning from $CIRCT_PROJECT_URL"
+    git clone "$CIRCT_PROJECT_URL" "$CIRCT_PROJECT_PATH"
+    git -C "$CIRCT_PROJECT_PATH" submodule update --init --recursive --progress
+fi
+
+LLVM_PROJECT_PATH="$CIRCT_PROJECT_PATH/llvm"
+LLVM_BUILD_PATH="$LLVM_PROJECT_PATH/build"
+
+LLVM_BUILD_ARGS=(
+    -G Ninja
+    -DLLVM_ENABLE_PROJECTS=mlir
+    -DLLVM_TARGETS_TO_BUILD=host
+    -DLLVM_ENABLE_ASSERTIONS=ON
+    -DCMAKE_BUILD_TYPE="$CMAKE_BUILD_TYPE"
+    -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+    -B"$LLVM_BUILD_PATH" "$LLVM_PROJECT_PATH/llvm"
+)
+
+echo "Configuring LLVM with ${LLVM_BUILD_ARGS[@]}"
+cmake "${LLVM_BUILD_ARGS[@]}"
+
+echo "Building LLVM"
+ninja -C "$LLVM_BUILD_PATH"
+
+echo "Configuring CIRCT with ${CIRCT_BUILD_ARGS[@]}"
+cmake "${CIRCT_BUILD_ARGS[@]}"
+
+echo "Building CIRCT"
+ninja -C "$CIRCT_BUILD_PATH"
