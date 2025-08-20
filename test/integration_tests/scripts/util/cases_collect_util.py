@@ -20,33 +20,37 @@ class CasesCollectUtil:
     @staticmethod
     def collect_test_cases(logger, cases_dir, cases_spec) -> List[str]:
         """Collect test cases, with filtering based on --cases option"""
-        # 1. 获取所有可用的测试用例目录
+        # Get all available test case directories
         all_case_dirs = []
         for item in os.listdir(cases_dir):
             item_path = os.path.join(cases_dir, item)
             if os.path.isdir(item_path) and not item.startswith("."):
                 all_case_dirs.append(item_path)
 
-        # 2. 未指定--cases时，返回所有用例
-        if not cases_spec:
+        # --cases not provided (cases_spec is None) - execute all cases
+        if cases_spec is None:
             return sorted(all_case_dirs)
 
-        # 3. 解析--cases参数（区分是文件还是用例名称列表）
+        # --cases provided without arguments (empty list) - execute no cases
+        if len(cases_spec) == 0:
+            return []
+
+        # parse --cases parameter
         target_names = []
         if len(cases_spec) == 1:
-            # 单个参数：可能是文件路径或单个用例名称
+            # Single parameter: could be file path or single case name
             candidate = cases_spec[0]
             if os.path.isfile(candidate):
-                # 是文件路径：从文件加载用例名称
+                # file path: load cases from file
                 target_names = CasesCollectUtil.load_case_names_from_file(logger, candidate)
             else:
-                # 是单个用例名称
+                # single case name
                 target_names = [candidate]
         else:
-            # 多个参数：视为用例名称列表
+            # Multiple parameters: treat as list of case names
             target_names = cases_spec
 
-        # 4. 筛选出存在的用例目录
+        # Filter existing case directories
         filtered_dirs = []
         missing_cases = []
         for name in target_names:
@@ -56,11 +60,11 @@ class CasesCollectUtil:
             else:
                 missing_cases.append(name)
 
-        # 5. 处理缺失的用例
+        # Handle missing cases
         if missing_cases:
             logger.warning(f"Some cases not found: {missing_cases}")
 
-        # 6. 去重并排序
+        # 6. Remove duplicates and sort
         unique_filtered_dirs = sorted(list(set(filtered_dirs)))
 
         return unique_filtered_dirs
