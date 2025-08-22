@@ -18,3 +18,4 @@ if [ -z "$Z3_PATH" ]; then
 fi
 
 EquivFusionLEC  $SCRIPT_DIR/input.mlir -c1 foo1 --c2 foo2 --run --shared-libs="$Z3_PATH"
+#CHECK: c1 == c2

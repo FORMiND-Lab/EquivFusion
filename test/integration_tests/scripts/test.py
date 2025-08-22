@@ -1,25 +1,23 @@
 import os
 import sys
 import concurrent.futures
-from typing import Tuple, Optional
+from pathlib import Path
 from util.path_util import PathUtil
 from util.log_util import LogUtil
 from util.cases_collect_util import CasesCollectUtil
-from util.compare_util import CompareUtil
 from util.command_util import CommandUtil
+
+LOG_DIRECTORY_NAME = "log"
 
 class TestRunner:
     """Test executor class encapsulating test case execution logic"""
 
     def __init__(self, args):
         """Initialize test configuration"""
-        # Ensure log directory exists
-        PathUtil.ensure_dir_exists(args.log_dir)
-        # Init log
-        self.logger = LogUtil.init_logger(args.log_dir)
+        self.tool_dir = PathUtil.to_absoluate(args.tool_dir)
+        self.llvm_dir = PathUtil.to_absoluate(args.llvm_dir)
 
         self.cases_dir = PathUtil.to_absoluate(args.cases_dir)
-        self.tool_dir = PathUtil.to_absoluate(args.tool_dir)
         self.log_dir = PathUtil.to_absoluate(args.log_dir)
         self.cases_spec = args.cases
         self.threads = args.threads
@@ -27,6 +25,11 @@ class TestRunner:
 
         # Setup environment variables
         self._setup_environment_variables()
+
+        actual_log_dir = Path(PathUtil.to_absoluate(args.log_dir)) / LOG_DIRECTORY_NAME
+        PathUtil.ensure_dir_exists(str(actual_log_dir))
+        # Init log
+        self.logger = LogUtil.init_logger(actual_log_dir )
 
         # Print configuration information
         self.print_configure()
@@ -41,22 +44,18 @@ class TestRunner:
         self.shell_env = os.environ.copy()
 
         # absolute path of tool_dir add to PATH
+        self.shell_env["PATH"] = f"{self.llvm_dir}:{self.shell_env.get('PATH', '')}"
         self.shell_env["PATH"] = f"{self.tool_dir}:{self.shell_env.get('PATH', '')}"
 
-    def handle_single_case_result(self, log_prefix, result, output_path, golden_path):
-        def handle_success() -> bool:
-            # Check for golden file
-            if not os.path.exists(golden_path):
-                self.logger.info(f"{log_prefix} Failed [no golden file]")
-                return False
 
-            # Compare results
-            match, diff = CompareUtil.compare_files(output_path, golden_path)
-            if match:
+    def handle_single_case_result(self, log_prefix, result, output_path, check_path, check_output):
+        def handle_success() -> bool:
+            check_result = CommandUtil.execute_file_check(self.shell_env, output_path, check_path, check_output)
+            if check_result == "success":
                 self.logger.info(f"{log_prefix} Passed")
                 return True
             else:
-                self.logger.info(f"{log_prefix} Failed [golden mismatch: {output_path}, {golden_path}]")
+                self.logger.info(f"{log_prefix} Failed [FileCheck error, see {check_output}]")
                 return False
 
         def handle_timeout() -> bool:
@@ -64,7 +63,7 @@ class TestRunner:
             return False
 
         def handle_failed() -> bool:
-            self.logger.info(f"{log_prefix} Failed [run script error, see log: {output_path}]")
+            self.logger.info(f"{log_prefix} Failed [run script error, see {output_path}]")
             return False
 
         result_handlers = {
@@ -82,33 +81,28 @@ class TestRunner:
     def run_single_case(self, case_dir: str, index: int, total_count: int) -> bool:
         """Execute a single test case"""
         case_name = os.path.basename(case_dir)
-        log_prefix = f"\t{index}/{total_count} - {case_name} :"
-
-        # Initialize log directory and output file
-        case_log_dir = os.path.join(self.log_dir, case_name)
-        PathUtil.ensure_dir_exists(case_log_dir)
-        output_path = os.path.join(case_log_dir, f"{case_name}.log")
+        log_prefix = f"    {index}/{total_count} - {case_name} :"
 
         try:
-            shell_path = os.path.join(case_dir, f"{case_name}.sh")
+            case_test_path = Path(case_dir) / f"{case_name}.sh"
+            output_path = Path(self.log_dir) / LOG_DIRECTORY_NAME / case_name / f"{case_name}.log"
 
-            if not os.path.exists(shell_path):
-                self.logger.info(f"{log_prefix} Failed [no script file]")
+            if not os.path.exists(case_test_path):
+                self.logger.info(f"{log_prefix} Failed [no case test file]")
                 return False
 
             # Execute test case
-            self.logger.debug(f"{log_prefix} Executing shell script: {shell_path}")
             exec_result = CommandUtil.execute_shell_script(
                 self.shell_env,
                 case_dir,
-                shell_path,
+                case_test_path,
                 output_path,
                 self.timeout
             )
 
-            golden_path = os.path.join(case_dir, f"{case_name}.golden")
+            check_output = Path(self.log_dir) / LOG_DIRECTORY_NAME / case_name  / f"{case_name}_filecheck.log"
             # Analysis test result
-            return self.handle_single_case_result(log_prefix, exec_result, output_path, golden_path)
+            return self.handle_single_case_result(log_prefix, exec_result, output_path, case_test_path, check_output)
 
         except Exception as e:
             self.logger.info(f"{log_prefix} Failed [exception: {str(e)}]")
@@ -126,12 +120,13 @@ class TestRunner:
         self.logger.info("=" * 120)
         self.logger.info("Test Configuration")
         self.logger.info("-" * 120)
-        self.logger.info(f"\tcases directory    : {self.cases_dir}")
-        self.logger.info(f"\ttool directory     : {self.tool_dir}")
-        self.logger.info(f"\tlog directory      : {self.log_dir}")
-        self.logger.info(f"\tcases              : {self.cases_spec}")
-        self.logger.info(f"\tthreads num        : {self.threads}")
-        self.logger.info(f"\ttimeout            : {self.timeout}")
+        self.logger.info(f"    TOOL directory   : {self.tool_dir}")
+        self.logger.info(f"    LLVM directory   : {self.llvm_dir}")
+        self.logger.info(f"    log directory    : {self.log_dir}")
+        self.logger.info(f"    cases directory  : {self.cases_dir}")
+        self.logger.info(f"    cases            : {self.cases_spec}")
+        self.logger.info(f"    threads num      : {self.threads}")
+        self.logger.info(f"    timeout          : {self.timeout}")
         self.logger.info("=" * 120 + "\n")
 
     def print_result(self, total_count, failed_count):
@@ -142,18 +137,19 @@ class TestRunner:
         self.logger.info("\n" + "=" * 120)
         self.logger.info("Test Results Summary")
         self.logger.info("-" * 120)
-        self.logger.info(f"\tTotal cases        : {total_count}")
-        self.logger.info(f"\tPassed             : {passed_count}")
-        self.logger.info(f"\tFailed             : {failed_count}")
-        self.logger.info(f"\tPass rate          : {pass_rate:.2f}%")
+        self.logger.info(f"    Total cases      : {total_count}")
+        self.logger.info(f"    Passed           : {passed_count}")
+        self.logger.info(f"    Failed           : {failed_count}")
+        self.logger.info(f"    Pass rate        : {pass_rate:.2f}%")
         self.logger.info("=" * 120)
 
     def validate_used_paths(self) -> bool:
         """Validate used paths"""
         return all([
-            PathUtil.validate_path_is_dir(self.logger, self.cases_dir, "Cases directory"),
-            PathUtil.validate_path_is_dir(self.logger, self.tool_dir, "Tool directory"),
-            PathUtil.validate_path_is_dir(self.logger, self.log_dir, "Log directory")
+            PathUtil.validate_path_is_dir(self.logger, self.tool_dir, "TOOL directory"),
+            PathUtil.validate_path_is_dir(self.logger, self.llvm_dir, "LLVM directory"),
+            PathUtil.validate_path_is_dir(self.logger, self.log_dir, "Log directory"),
+            PathUtil.validate_path_is_dir(self.logger, self.cases_dir, "Cases directory")
         ])
 
     def run_all_tests(self) -> int:
