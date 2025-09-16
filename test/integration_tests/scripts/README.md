@@ -26,7 +26,7 @@ cases/
 # Usage
 ## Basic command
 ```bash
-python3 main.py [--tool-dir <tool-dir>] [--llvm-dir <llvm-dir>] [--cases-dir <cases-dir>] [--log-dir <log-dir>] [--cases <cases-list or cases-file] [--threads <threads>] [--timeout <timeout>]
+python3 main.py [--tool-dir <tool-dir>] [--circt-dir <circ-dir>] [--llvm-dir <llvm-dir>] [--cases-dir <cases-dir>] [--log-dir <log-dir>] [--cases <cases-list or cases-file] [--threads <threads>] [--timeout <timeout>]
 ```
 
 ## Examples
@@ -44,15 +44,16 @@ python3 main.py --cases-dir test_cases --cases cases.txt
 ```
 
 ## Command-Line Arguments
-| Argument      | Required | Description                                                                                                                    |
-|---------------|----------|--------------------------------------------------------------------------------------------------------------------------------|
-| `--tool-dir`  | No       | TOOL directory (added to `PATH` for script access)      (default: project_directory/build/bin)                                 |
-| `--llvm-dir`  | No       | LLVM directory (added to `PATH` for script access)      (default: project_directory/circt_prebuild/bin)                        |
-| `--cases-dir` | No       | Cases directory                                         (default: project_directory/test/integration_tests/cases)              |
-| `--log-dir`   | No       | Log directory                                           (default: project_directory)                                           |
-| `--cases`     | No       | Filter test cases: <br/>- Space-separated case names (e.g., `case1 case2`) <br/>- Path to a list file (one case name per line) |
-| `--threads`   | No       | Number of threads for parallel execution                (default: 4)                                                           |
-| `--timeout`   | No       | Timeout for each case                                   (default: 300)                                                         |
+| Argument      | Description                                                                                                                    | Default                                        |
+|---------------|--------------------------------------------------------------------------------------------------------------------------------|------------------------------------------------|
+| `--tool-dir`  | TOOL directory (added to `PATH` for script access)                                                                             | project_directory/build/bin                    |
+| `--llvm-dir`  | LLVM directory (added to `PATH` for script access)                                                                             | project_directory/circt_prebuild/bin           |
+| `--circt-dir` | CIRCT directory (added to `PATH` for script access)                                                                            | project_directory/circt_prebuild/bin           |
+| `--cases-dir` | Cases directory                                                                                                                | project_directory/test/integration_tests/cases |
+| `--log-dir`   | Log directory                                                                                                                  | project_directory                              |
+| `--cases`     | Filter test cases: <br/>- Space-separated case names (e.g., `case1 case2`) <br/>- Path to a list file (one case name per line) | all cases in --cases_dir                       |
+| `--threads`   | Number of threads for parallel execution<br/>                                                                                  | 4                                              |
+| `--timeout`   | Timeout for each case                                                                                                          | 300                                            |
 
 
 # Log

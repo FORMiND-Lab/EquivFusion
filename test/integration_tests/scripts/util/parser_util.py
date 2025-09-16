@@ -3,6 +3,7 @@ import argparse
 
 DEFAULT_TOOL_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../../", "build/bin"))
 DEFAULT_LLVM_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../../", "circt_prebuild/bin"))
+DEFAULT_CIRCT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../../", "circt_prebuild/bin"))
 
 DEFAULT_CASES_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../..", "cases"))
 DEFAULT_LOG_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../../"))
@@ -16,6 +17,7 @@ class ParserUtil:
 
         parser.add_argument("--tool-dir",   default = DEFAULT_TOOL_DIR,     help = f"Tool directory  (default : '{DEFAULT_TOOL_DIR}'")
         parser.add_argument("--llvm-dir",   default = DEFAULT_LLVM_DIR,     help = f"LLVM directory. (default : '{DEFAULT_LLVM_DIR}'")
+        parser.add_argument("--circt-dir",  default = DEFAULT_CIRCT_DIR,    help = f"CIRCT directory. (default : '{DEFAULT_CIRCT_DIR}'")
         parser.add_argument("--cases-dir",  default = DEFAULT_CASES_DIR,    help = f"Cases directory (default : '{DEFAULT_CASES_DIR}'")
         parser.add_argument("--log-dir",    default = DEFAULT_LOG_DIR,      help = f"Log directory   (default: '{DEFAULT_LOG_DIR}'")
 

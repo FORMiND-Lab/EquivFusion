@@ -16,8 +16,8 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Setup Environment
-        uses: ./.github/actions/setup-env
+      - name: Setup Build Environment
+        uses: ./.github/actions/setup-build-env
 
       - name: Build
         uses: ./.github/actions/build
@@ -31,8 +31,14 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Setup Environment
-        uses: ./.github/actions/setup-env
+      - name: Setup Build Environment
+        uses: ./.github/actions/setup-build-env
+
+      - name: Setup Test Environment
+        uses: ./.github/actions/setup-test-env
+
+      - name: Build
+        uses: ./.github/actions/build
 
       - name: Run Integration Tests
         uses: ./.github/actions/integration-tests

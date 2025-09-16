@@ -4,11 +4,6 @@ description: 'Runs integration tests'
 runs:
   using: 'composite'
   steps:
-    - name: Build
-      uses: ./.github/actions/build
-      with:
-        build-type: 'Release'
-
     - name: Run Integration Tests
       shell: bash
       run: |
