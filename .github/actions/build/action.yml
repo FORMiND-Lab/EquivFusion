@@ -16,3 +16,4 @@ runs:
         cd build
         cmake .. -DCMAKE_BUILD_TYPE=${{ inputs.build-type }}
         make -j$procs
+        

@@ -16,6 +16,7 @@ class TestRunner:
         """Initialize test configuration"""
         self.tool_dir = PathUtil.to_absoluate(args.tool_dir)
         self.llvm_dir = PathUtil.to_absoluate(args.llvm_dir)
+        self.circt_dir = PathUtil.to_absoluate(args.circt_dir)
 
         self.cases_dir = PathUtil.to_absoluate(args.cases_dir)
         self.log_dir = PathUtil.to_absoluate(args.log_dir)
@@ -44,6 +45,7 @@ class TestRunner:
         self.shell_env = os.environ.copy()
 
         # absolute path of tool_dir add to PATH
+        self.shell_env["PATH"] = f"{self.circt_dir}:{self.shell_env.get('PATH', '')}"
         self.shell_env["PATH"] = f"{self.llvm_dir}:{self.shell_env.get('PATH', '')}"
         self.shell_env["PATH"] = f"{self.tool_dir}:{self.shell_env.get('PATH', '')}"
 
@@ -91,9 +93,13 @@ class TestRunner:
                 self.logger.info(f"{log_prefix} Failed [no case test file]")
                 return False
 
+            # Copy shell_env and add "CASE_LOG_PATH"
+            case_env = self.shell_env.copy()
+            case_env["CASE_LOG_PATH"] = str(output_path.parent)
+
             # Execute test case
             exec_result = CommandUtil.execute_shell_script(
-                self.shell_env,
+                case_env,
                 case_dir,
                 case_test_path,
                 output_path,
@@ -122,6 +128,7 @@ class TestRunner:
         self.logger.info("-" * 120)
         self.logger.info(f"    TOOL directory   : {self.tool_dir}")
         self.logger.info(f"    LLVM directory   : {self.llvm_dir}")
+        self.logger.info(f"    CIRCT directory  : {self.circt_dir}")
         self.logger.info(f"    log directory    : {self.log_dir}")
         self.logger.info(f"    cases directory  : {self.cases_dir}")
         self.logger.info(f"    cases            : {self.cases_spec}")
@@ -148,6 +155,7 @@ class TestRunner:
         return all([
             PathUtil.validate_path_is_dir(self.logger, self.tool_dir, "TOOL directory"),
             PathUtil.validate_path_is_dir(self.logger, self.llvm_dir, "LLVM directory"),
+            PathUtil.validate_path_is_dir(self.logger, self.circt_dir, "CIRCT directory"),
             PathUtil.validate_path_is_dir(self.logger, self.log_dir, "Log directory"),
             PathUtil.validate_path_is_dir(self.logger, self.cases_dir, "Cases directory")
         ])

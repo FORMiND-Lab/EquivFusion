@@ -145,6 +145,7 @@ include(HandleLLVMOptions)
 add_subdirectory(infrastructure)
 add_subdirectory(client)
 add_subdirectory(tools)
+add_subdirectory(solving)
 
 
 

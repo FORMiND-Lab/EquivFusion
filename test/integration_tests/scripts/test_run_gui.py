@@ -10,6 +10,7 @@ from util.parser_util import (
     DEFAULT_CASES_DIR,
     DEFAULT_TOOL_DIR,
     DEFAULT_LLVM_DIR,
+    DEFAULT_CIRCT_DIR,
     DEFAULT_LOG_DIR,
     DEFAULT_THREADS,
     DEFAULT_TIMEOUT
@@ -40,6 +41,13 @@ class TestRunnerGUI:
                 "default": DEFAULT_LLVM_DIR,
                 "has_browse": True,
                 "command": self.execute_ui_browse_llvm_dir
+            },
+            {
+                "key": "circt_dir",
+                "Label": "CIRCT Directory",
+                "default": DEFAULT_CIRCT_DIR,
+                "has_browse": True,
+                "command": self.execute_ui_browse_circt_dir
             },
             {
                 "key": "log_dir",
@@ -262,6 +270,9 @@ class TestRunnerGUI:
     def execute_ui_browse_llvm_dir(self):
         self._browse_directory("llvm_dir")
 
+    def execute_ui_browse_circt_dir(self):
+        self._browse_directory("circt_dir")
+
     def execute_ui_browse_log_dir(self):
         self._browse_directory("log_dir")
 
@@ -387,6 +398,7 @@ class TestRunnerGUI:
         args = [
             "--tool-dir", self.input_vars["tool_dir"].get(),
             "--llvm-dir", self.input_vars["llvm_dir"].get(),
+            "--circt-dir", self.input_vars["circt_dir"].get(),
             "--cases-dir", self.input_vars["cases_dir"].get(),
             "--log-dir", self.input_vars['log_dir'].get(),
             "--threads", self.input_vars['threads'].get(),
