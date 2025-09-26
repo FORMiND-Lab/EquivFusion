@@ -5,5 +5,5 @@ add_library(base OBJECT ${SRC_FILES})
 target_include_directories(base PRIVATE ${INCLUDE_DIRS})
 target_include_directories(base PRIVATE ${READLINE_INCLUDE_DIRECTORY})
 
-target_link_libraries(base PUBLIC log)
+target_link_libraries(base PUBLIC log solving)
 target_link_libraries(base PUBLIC ${READLINE_LIBRARY})

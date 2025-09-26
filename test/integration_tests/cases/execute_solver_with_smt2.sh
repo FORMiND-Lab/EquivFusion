@@ -18,5 +18,6 @@ input_files="$5"
 EquivFusionLEC --c1 "$name1" --c2 "$name2" --emit-smtlib "$input_files" -o "$out_dir/output.smt"
 
 # Run: Solver
-equiv_fusion_solver --solver "$solver" --inputfile "$out_dir/output.smt"
+# run_solver --solver "$solver" --inputfile "$out_dir/output.smt"
+equiv_fusion -p "run_solver --solver "$solver" --inputfile "$out_dir/output.smt""
 

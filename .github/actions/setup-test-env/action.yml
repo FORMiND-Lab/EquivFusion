@@ -3,41 +3,13 @@ description: Setup test environment for EquivFusion
 runs:
   using: composite
   steps:
-    - name: Linux runtime environment
+    - name: Install dependencies
       shell: bash
       run: |
-        mkdir -p "${{ github.workspace }}/.local/bin"
-        echo "${{ github.workspace }}/.local/bin" >> $GITHUB_PATH
-        echo "procs=$(nproc)" >> $GITHUB_ENV
+        pip install meson   # for install bitwuzla
 
     - name: Install z3
       shell: bash
       run: |
         sudo apt update
         sudo apt install libz3-dev z3   # install z3
-
-    - name: Install aiger
-      shell: bash
-      run: |
-        ./.github/bin/setup-aiger.sh
-        cp deps/aiger/aigmiter deps/aiger/aigtocnf "${{ github.workspace }}/.local/bin"
-
-    - name: Install kissat
-      shell: bash
-      run: |
-        ./.github/bin/setup-kissat.sh
-        cp deps/kissat/build/kissat "${{ github.workspace }}/.local/bin"
-
-    - name: Install boolector
-      shell: bash
-      run: |
-        ./.github/bin/setup-boolector.sh 
-        cp deps/boolector/build/bin/btormc "${{ github.workspace }}/.local/bin"
-
-    - name: Install bitwuzla
-      shell: bash
-      run: |
-        pip install meson ninja
-        ./.github/bin/setup-bitwuzla.sh
-        cp deps/bitwuzla/build/src/main/bitwuzla "${{ github.workspace }}/.local/bin"
-        bitwuzla --version

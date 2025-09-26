@@ -4,14 +4,16 @@
 #include "infrastructure/log/log.h"
 #include "libs/cxxopts/cxxopts.hpp"
 
-
 int main(int argc, char** argv) { 
     bool run_shell = true;
+    std::vector<std::string> commands;
 
     cxxopts::Options options(argv[0], "EquivFusion -- Silent as Pine, Precise as Logic");
-    options.add_options("operation") \
-        ("H", "print the command list") \
-        ("h,help", "print this help message.");
+    options.add_options("operation")
+        ("p,command", "execute <command>)", cxxopts::value<std::vector<std::string>>(), "<commands>")
+        ("H", "print the command list")
+        ("h,help", "print this help message.")
+    ;
 
     XuanSong::CommandManager *commandMgr = XuanSong::CommandManager::getInstance();
     commandMgr->registerCommand();
@@ -28,12 +30,21 @@ int main(int argc, char** argv) {
             XuanSong::log("%s\n", options.help().c_str());
             run_shell = false;
         }
+
+        if (result.count("p")) {
+            auto cmds = result["p"].as<std::vector<std::string>>();
+            commands.insert(commands.end(), cmds.begin(), cmds.end());
+            run_shell = false;
+        }
     } catch (const cxxopts::exceptions::parsing& e) {
         XuanSong::log("Error parsing options: %s\n", e.what());
         XuanSong::log("Run '%s --help' for help.\n", argv[0]);
         exit(1);
 	}
 
+    for (auto it = commands.begin(); it != commands.end(); it++) {
+        XuanSong::runCommand(*it);
+    }
 
     if (run_shell) { 
         XuanSong::runShell();

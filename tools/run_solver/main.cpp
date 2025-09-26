@@ -3,7 +3,7 @@
 #include "libs/cxxopts/cxxopts.hpp"
 #include "infrastructure/log/log.h"
 
-#include "solving/solver.hpp"
+#include "solving/run_solver.h"
 
 int main(int argc, char **argv) {
     std::string solver = "";
@@ -36,6 +36,6 @@ int main(int argc, char **argv) {
         return -1;
     }
 
-    int result = XuanSong::Solver::executeSolver(solver, inputFile, opts);
+    int result = XuanSong::RunSolver::runSolver(solver, inputFile, opts);
     return result;
 }
