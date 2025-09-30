@@ -142,11 +142,10 @@ include(HandleLLVMOptions)
 # Add Subdirectories
 # -------------------------------------------
 
+add_subdirectory(solving)
 add_subdirectory(infrastructure)
 add_subdirectory(client)
 add_subdirectory(tools)
-add_subdirectory(solving)
-
 
 
 

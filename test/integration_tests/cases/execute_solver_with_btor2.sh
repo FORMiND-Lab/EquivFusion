@@ -14,7 +14,8 @@ output_dir="$3"
 circt-opt --convert-hw-to-btor2  "$input_file" -o "$output_dir/top.log" &> "$output_dir/top.btor2"
 
 # Run solver
-equiv_fusion_solver --solver "$solver" --inputfile "$output_dir/top.btor2"
+# run_solver --solver "$solver" --inputfile "$output_dir/top.btor2"
+equiv_fusion -p "run_solver --solver "$solver" --inputfile "$output_dir/top.btor2""
 
 
 

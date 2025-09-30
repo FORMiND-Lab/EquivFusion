@@ -5,6 +5,10 @@ inputs:
     description: 'Build type (e.g. Debug, Release)'
     required: true
     default: 'Release'
+  install-solvers:
+    description: 'Whether to install solvers (true/false)'
+    required: false
+    default: 'false'
 
 runs:
   using: composite
@@ -14,6 +18,9 @@ runs:
       run: |
         mkdir build
         cd build
-        cmake .. -DCMAKE_BUILD_TYPE=${{ inputs.build-type }}
-        make -j$procs
+        cmake .. -DCMAKE_BUILD_TYPE=${{ inputs.build-type }} -G Ninja
+        ninja
+        if [ "${{ inputs.install-solvers }}" = "true" ]; then
+          ninja install_solvers
+        fi
         

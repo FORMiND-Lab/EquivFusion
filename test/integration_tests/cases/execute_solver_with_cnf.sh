@@ -45,5 +45,6 @@ circt-translate --export-aiger "$out_dir/${name2}_aig.mlir" -o "$out_dir/${name2
 }
 
 # Run solver
-equiv_fusion_solver --solver "$solver" --inputfile "$out_dir/miter.cnf"
+# run_solver --solver "$solver" --inputfile "$out_dir/miter.cnf"
+equiv_fusion -p "run_solver --solver "$solver" --inputfile "$out_dir/miter.cnf""
 

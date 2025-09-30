@@ -39,6 +39,8 @@ jobs:
 
       - name: Build
         uses: ./.github/actions/build
+        with:
+          install-solvers: 'true'
 
       - name: Run Integration Tests
         uses: ./.github/actions/integration-tests

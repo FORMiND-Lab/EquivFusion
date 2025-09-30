@@ -3,11 +3,6 @@ description: Setup build environment for EquivFusion
 runs:
   using: composite
   steps:
-    - name: Linux runtime environment
-      shell: bash
-      run: |
-        echo "procs=$(nproc)" >> $GITHUB_ENV
-
     - name: Install Linux Dependencies
       shell: bash
       run: |
