@@ -4,18 +4,22 @@ set -euo pipefail
 
 # Execute MC
 #   $1 - solver [btormc, bitwuzla ...]
-#   $2 - input file
-#   $3 - output directoy
+#   $2 - first module name
+#   $3 - second module name
+#   $4 - output directory
+#   $5 - input files
 solver="$1"
-input_file="$2"
-output_dir="$3"
+name1="$2"
+name2="$3"
+out_dir="$4"
+input_files="$5"
 
-# Convert to BTOR2
-circt-opt --convert-hw-to-btor2  "$input_file" -o "$output_dir/top.log" &> "$output_dir/top.btor2"
+# Construct Miter and Export to BTOR2
+equiv_miter --c1 "$name1" --c2 "$name2" "$input_files" --btor2 -o "$out_dir/miter.btor2"
 
 # Run solver
-# run_solver --solver "$solver" --inputfile "$output_dir/top.btor2"
-equiv_fusion -p "run_solver --solver "$solver" --inputfile "$output_dir/top.btor2""
+## run_solver --solver "$solver" --inputfile "$output_dir/top.btor2"
+equiv_fusion -p "run_solver --solver "$solver" --inputfile "$out_dir/miter.btor2""
 
 
 

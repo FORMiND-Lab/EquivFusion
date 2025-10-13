@@ -14,10 +14,10 @@ name2="$3"
 out_dir="$4"
 input_files="$5"
 
-# EquivFusion: Construct Miter and Export SMT-LIB
-EquivFusionLEC --c1 "$name1" --c2 "$name2" --emit-smtlib "$input_files" -o "$out_dir/output.smt"
+# Construct Miter and Export SMT-LIB
+equiv_miter --c1 "$name1" --c2 "$name2" "$input_files" --smtlib -o "$out_dir/miter.smt"
 
 # Run: Solver
-# run_solver --solver "$solver" --inputfile "$out_dir/output.smt"
-equiv_fusion -p "run_solver --solver "$solver" --inputfile "$out_dir/output.smt""
+## run_solver --solver "$solver" --inputfile "$out_dir/output.smt"
+equiv_fusion -p "run_solver --solver "$solver" --inputfile "$out_dir/miter.smt""
 
