@@ -138,10 +138,19 @@ include(AddLLVM)
 include(AddMLIR)
 include(HandleLLVMOptions)
 
+set(EQUIVFUSION_INCLUDE_DIRS
+        "${CMAKE_CURRENT_SOURCE_DIR}"
+        "${CMAKE_CURRENT_SOURCE_DIR}/include"
+        "${CMAKE_BINARY_DIR}/include"
+)
+# Add Equivfusion headers to the include path
+include_directories(${EQUIVFUSION_INCLUDE_DIRS})
+
 # -------------------------------------------
 # Add Subdirectories
 # -------------------------------------------
 
+add_subdirectory(include)
 add_subdirectory(solving)
 add_subdirectory(infrastructure)
 add_subdirectory(client)
