@@ -1,1 +1,2 @@
-add_subdirectory(EquivMiter)
+add_subdirectory(Miter)
+add_subdirectory(DecomposeConcat)

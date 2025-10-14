@@ -1,0 +1,5 @@
+set(LLVM_TARGET_DEFINITIONS Passes.td)
+mlir_tablegen(Passes.h.inc -gen-pass-decls -name EquivFusionMiter)
+mlir_tablegen(EquivFusionMiter.capi.h.inc -gen-pass-capi-header --prefix EquivFusionMiter)
+mlir_tablegen(EquivFusionMiter.capi.cpp.inc -gen-pass-capi-impl --prefix EquivFusionMiter)
+add_public_tablegen_target(EquivFusionMiterIncGen)
