@@ -31,13 +31,16 @@
 #include "llvm/Support/SourceMgr.h"
 #include "llvm/Support/ToolOutputFile.h"
 
-
-#include "circt-passes/EquivMiter/Passes.h"
 #include "circt/Dialect/HW/HWPasses.h"
 #include "circt/Conversion/CombToAIG.h"
 #include "circt/Dialect/HW/HWOps.h"
 #include "circt/Conversion/ExportAIGER.h"
 #include "circt/Conversion/HWToBTOR2.h"
+
+#include "circt/Dialect/Arc/ArcPasses.h"
+
+#include "circt-passes/Miter/Passes.h"
+#include "circt-passes/DecomposeConcat/Passes.h"
 
 namespace cl = llvm::cl;
 
@@ -157,8 +160,8 @@ static LogicalResult executeMiterToSMTLIB(mlir::PassManager &pm, ModuleOp module
     pm.addPass(emit::createStripEmitPass());
 
     pm.addPass(hw::createFlattenModules());
-    EquivfusionMiterOptions opts = {firstModuleName, secondModuleName, EquivMiter::MiterModeEnum::SMTLIB};
-    pm.addPass(createEquivfusionMiter(opts));
+    EquivFusionMiterOptions opts = {firstModuleName, secondModuleName, EquivFusionMiter::MiterModeEnum::SMTLIB};
+    pm.addPass(createEquivFusionMiter(opts));
 
     pm.addPass(createConvertHWToSMT());
     pm.addPass(createConvertCombToSMT());
@@ -174,8 +177,8 @@ static LogicalResult executeMiterToSMTLIB(mlir::PassManager &pm, ModuleOp module
 
 static LogicalResult executeMiterToAIGER(mlir::PassManager &pm, ModuleOp module,
                                          llvm::raw_ostream &os) {
-    EquivfusionMiterOptions opts = {firstModuleName, secondModuleName, EquivMiter::MiterModeEnum::AIGER};
-    pm.addPass(createEquivfusionMiter(opts));
+    EquivFusionMiterOptions opts = {firstModuleName, secondModuleName, EquivFusionMiter::MiterModeEnum::AIGER};
+    pm.addPass(createEquivFusionMiter(opts));
 
     pm.addPass(hw::createFlattenModules());
     pm.addPass(createSimpleCanonicalizerPass());
@@ -195,11 +198,13 @@ static LogicalResult executeMiterToAIGER(mlir::PassManager &pm, ModuleOp module,
 
 static LogicalResult executeMiterToBTOR2(mlir::PassManager &pm, ModuleOp module,
                                          llvm::raw_ostream &os) {
-    EquivfusionMiterOptions opts = {firstModuleName, secondModuleName, EquivMiter::MiterModeEnum::BTOR2};
-    pm.addPass(createEquivfusionMiter(opts));
+    EquivFusionMiterOptions opts = {firstModuleName, secondModuleName, EquivFusionMiter::MiterModeEnum::BTOR2};
+    pm.addPass(createEquivFusionMiter(opts));
 
     pm.addPass(hw::createFlattenModules());
-    pm.addPass(createSimpleCanonicalizerPass());
+//    pm.addPass(createSimpleCanonicalizerPass());
+    pm.addPass(createEquivFusionDecomposeConcat());
+    pm.addPass(arc::createSimplifyVariadicOpsPass());
 
     pm.addPass(createConvertHWToBTOR2Pass(os));
 

@@ -11,7 +11,7 @@
 #include "mlir/Pass/Pass.h"
 
 namespace circt {
-namespace EquivMiter {
+namespace EquivFusionMiter {
 
 enum class MiterModeEnum {
     /// Miter for SMTLIB output
@@ -26,10 +26,10 @@ enum class MiterModeEnum {
 
 }
 
-/// Generate the code for regitering passes.
+/// Generate the code for registering passes.
 #define GEN_PASS_DECL_EQUIVFUSIONMITER
 #define GEN_PASS_REGISTRATION
-#include "circt-passes/EquivMiter/Passes.h.inc"
+#include "circt-passes/Miter/Passes.h.inc"
 
 }
 

@@ -2,7 +2,7 @@
 #include "circt/Dialect/Comb/CombOps.h"
 #include "circt/Dialect/Verif/VerifOps.h"
 #include "mlir/Analysis/TopologicalSortUtils.h"
-#include "circt-passes/EquivMiter/Passes.h"
+#include "circt-passes/Miter/Passes.h"
 
 
 using namespace mlir;
@@ -11,19 +11,18 @@ using namespace hw;
 
 namespace circt {
 #define GEN_PASS_DEF_EQUIVFUSIONMITER
-#include "circt-passes/EquivMiter/Passes.h.inc"
+#include "circt-passes/Miter/Passes.h.inc"
 } // namespace circt
 
 
 //===----------------------------------------------------------------------===//
-// EquivfusionConstructMiter pass
+// EquivFusionMiter pass
 //===----------------------------------------------------------------------===//
 
-
 namespace {
-struct EquivfusionMiterPass
-    : public circt::impl::EquivfusionMiterBase<EquivfusionMiterPass> {
-    using circt::impl::EquivfusionMiterBase<EquivfusionMiterPass>::EquivfusionMiterBase;
+struct EquivFusionMiterPass
+    : public circt::impl::EquivFusionMiterBase<EquivFusionMiterPass> {
+    using circt::impl::EquivFusionMiterBase<EquivFusionMiterPass>::EquivFusionMiterBase;
     void runOnOperation() override;
 
 private:
@@ -38,7 +37,7 @@ private:
 };
 } // namespace
 
-hw::HWModuleOp EquivfusionMiterPass::lookupModule(StringRef name) {
+hw::HWModuleOp EquivFusionMiterPass::lookupModule(StringRef name) {
     Operation *expectedModule = SymbolTable::lookupNearestSymbolFrom(
         getOperation(), StringAttr::get(&getContext(), name));
     if (!expectedModule || !isa<hw::HWModuleOp>(expectedModule)) {
@@ -48,23 +47,23 @@ hw::HWModuleOp EquivfusionMiterPass::lookupModule(StringRef name) {
     return cast<hw::HWModuleOp>(expectedModule);
 }
 
-void EquivfusionMiterPass::constructMiter(OpBuilder& builder, Location loc,
+void EquivFusionMiterPass::constructMiter(OpBuilder& builder, Location loc,
                                           hw::HWModuleOp moduleA,
                                           hw::HWModuleOp moduleB) {
     switch (miterMode) {
-        case EquivMiter::MiterModeEnum::SMTLIB:
+        case EquivFusionMiter::MiterModeEnum::SMTLIB:
             constructMiterForSMTLIB(builder, loc, moduleA, moduleB);
             break;
-        case EquivMiter::MiterModeEnum::AIGER:
+        case EquivFusionMiter::MiterModeEnum::AIGER:
             constructMiterForAIGER(builder, loc, moduleA, moduleB);
             break;
-        case EquivMiter::MiterModeEnum::BTOR2:
+        case EquivFusionMiter::MiterModeEnum::BTOR2:
             constructMiterForBTOR2(builder, loc, moduleA, moduleB);
             break;       
     }
 }
 
-void EquivfusionMiterPass::constructMiterForSMTLIB(OpBuilder& builder, Location loc,
+void EquivFusionMiterPass::constructMiterForSMTLIB(OpBuilder& builder, Location loc,
                                                    hw::HWModuleOp moduleA,
                                                    hw::HWModuleOp moduleB) {
     auto lecOp = builder.create<verif::LogicEquivalenceCheckingOp>(loc, false);
@@ -93,7 +92,7 @@ void EquivfusionMiterPass::constructMiterForSMTLIB(OpBuilder& builder, Location 
     sortTopologically(&lecOp.getSecondCircuit().front());
 }
 
-void EquivfusionMiterPass::constructMiterForAIGER(OpBuilder& builder, Location loc,
+void EquivFusionMiterPass::constructMiterForAIGER(OpBuilder& builder, Location loc,
                                                   hw::HWModuleOp moduleA,
                                                   hw::HWModuleOp moduleB) {
 	/// Create topModule.
@@ -108,7 +107,7 @@ void EquivfusionMiterPass::constructMiterForAIGER(OpBuilder& builder, Location l
     term->erase();    
 }
 
-void EquivfusionMiterPass::constructMiterForBTOR2(OpBuilder& builder, Location loc,
+void EquivFusionMiterPass::constructMiterForBTOR2(OpBuilder& builder, Location loc,
                                                   hw::HWModuleOp moduleA,
                                                   hw::HWModuleOp moduleB) {
 	/// Create topModule.
@@ -122,7 +121,7 @@ void EquivfusionMiterPass::constructMiterForBTOR2(OpBuilder& builder, Location l
     term->erase();
 }
 
-std::pair<hw::HWModuleOp, Value> EquivfusionMiterPass::createTopModule(OpBuilder& builder, Location loc,
+std::pair<hw::HWModuleOp, Value> EquivFusionMiterPass::createTopModule(OpBuilder& builder, Location loc,
                                                                        hw::HWModuleOp moduleA,
                                                                        hw::HWModuleOp moduleB) {
     auto moduleAType = moduleA.getModuleType();
@@ -180,7 +179,7 @@ std::pair<hw::HWModuleOp, Value> EquivfusionMiterPass::createTopModule(OpBuilder
     return {topModule, equal};
 }
 
-void EquivfusionMiterPass::runOnOperation() {
+void EquivFusionMiterPass::runOnOperation() {
     OpBuilder builder = OpBuilder::atBlockEnd(getOperation().getBody());
     Location loc = getOperation()->getLoc();
 

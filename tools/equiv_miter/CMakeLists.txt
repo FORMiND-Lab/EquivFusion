@@ -17,12 +17,16 @@ target_link_libraries(equiv_miter
   MLIRSMT
   MLIRExportSMTLIB
 
-  EquivFusionMiter 
   CIRCTHWTransforms
   CIRCTCombToAIG
   CIRCTAIGTransforms
   CIRCTExportAIGER
   CIRCTHWToBTOR2
+    
+  CIRCTArcTransforms
+
+  EquivFusionMiter
+  EquivFusionDecomposeConcat
 )
 
 llvm_update_compile_flags(equiv_miter)
