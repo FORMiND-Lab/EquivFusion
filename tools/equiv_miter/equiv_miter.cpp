@@ -202,7 +202,6 @@ static LogicalResult executeMiterToBTOR2(mlir::PassManager &pm, ModuleOp module,
     pm.addPass(createEquivFusionMiter(opts));
 
     pm.addPass(hw::createFlattenModules());
-//    pm.addPass(createSimpleCanonicalizerPass());
     pm.addPass(createEquivFusionDecomposeConcat());
     pm.addPass(arc::createSimplifyVariadicOpsPass());
 
