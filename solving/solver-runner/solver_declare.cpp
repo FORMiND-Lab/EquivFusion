@@ -1,5 +1,5 @@
 #include <iostream>
-#include "solving/solver.h"
+#include "solving/solver-runner/solver_declare.h"
 
 namespace XuanSong {
 

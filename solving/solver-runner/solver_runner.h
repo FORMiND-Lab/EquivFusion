@@ -1,14 +1,14 @@
-#ifndef RUN_SOLVER_H
-#define RUN_SOLVER_H
+#ifndef SOLVER_RUNNER_H
+#define SOLVER_RUNNER_H
 
 #include <unordered_map>
 #include <memory>
 
-#include "solving/solver.h"
+#include "solving/solver-runner/solver_declare.h"
 
 namespace XuanSong {
 
-class RunSolver {
+class SolverRunner {
 private:
     static std::unordered_map<std::string, std::unique_ptr<Solver>> solvers;
     static void initializeSolvers();
@@ -18,13 +18,13 @@ private:
         return it != solvers.end() ? it->second.get() : nullptr;
     }
 
-    static int runSolver(Solver* solver, const std::string &command);
+    static int run(Solver* solver, const std::string &command);
 public:
-    static int runSolver(const std::string &solverName, const std::string &inputFile, const std::string& options);
+    static int run(const std::string &solverName, const std::string &inputFile, const std::string& options);
 };
 
 } // namespace XuanSong
 
-#endif //RUN_SOLVER_H
+#endif //SOLVER_RUNNER_H
 
 
