@@ -1,8 +1,13 @@
-#ifndef SOLVER_HPP
-#define SOLVER_HPP
+#ifndef SOLVER_DECLARE_HPP
+#define SOLVER_DECLARE_HPP
 
 #include <string>
-#include "solving/solver_definitions.h"
+
+#define SOLVER_LIST \
+    SOLVER(Z3Solver, "z3") \
+    SOLVER(BitwuzlaSolver, "bitwuzla") \
+    SOLVER(BtorMCSolver, "btormc")    \
+    SOLVER(KissatSolver, "kissat")    \
 
 namespace XuanSong {
 
@@ -32,6 +37,6 @@ SOLVER_LIST
 
 } // namespace XuanSong
 
-#endif //SOLVER_HPP
+#endif //SOLVER_DECLARE_HPP
 
 

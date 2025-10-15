@@ -20,7 +20,6 @@ equiv_miter --c1 "$name1" --c2 "$name2" "$input_files" --aiger -o "$out_dir/mite
 # Convert aiger to cnf
 aigtocnf "$out_dir/miter.aiger" "$out_dir/miter.cnf"
 
-# Run solver
-## run_solver --solver "$solver" --inputfile "$out_dir/miter.cnf"
-equiv_fusion -p "run_solver --solver "$solver" --inputfile "$out_dir/miter.cnf""
+# Solver runner
+equiv_fusion -p "solver_runner --solver "$solver" --inputfile "$out_dir/miter.cnf""
 

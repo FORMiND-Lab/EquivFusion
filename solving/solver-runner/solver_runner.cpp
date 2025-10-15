@@ -1,13 +1,13 @@
 #include <iostream>
 #include <cassert>
 
-#include "solving/run_solver.h"
+#include "solving/solver-runner/solver_runner.h"
 
 namespace XuanSong {
 
-std::unordered_map<std::string, std::unique_ptr<Solver>> RunSolver::solvers;
+std::unordered_map<std::string, std::unique_ptr<Solver>> SolverRunner::solvers;
 
-void RunSolver::initializeSolvers() {
+void SolverRunner::initializeSolvers() {
     if (solvers.empty()) {
     #define SOLVER(ClassName, SolverName) \
         solvers[SolverName] = std::make_unique<ClassName>();
@@ -17,12 +17,12 @@ void RunSolver::initializeSolvers() {
     }
 }
 
-int RunSolver::runSolver(Solver* solver, const std::string &command) {
+int SolverRunner::run(Solver* solver, const std::string &command) {
     assert(solver);
     return solver->run(command);
 }
 
-int RunSolver::runSolver(const std::string &solverName, const std::string &inputFile, const std::string& options) {
+int SolverRunner::run(const std::string &solverName, const std::string &inputFile, const std::string& options) {
     initializeSolvers();
 
     auto solver = getSolver(solverName);
@@ -33,7 +33,7 @@ int RunSolver::runSolver(const std::string &solverName, const std::string &input
     assert(solverName == solver->getName());
 
     std::string command = solverName + " " + options + " " + inputFile;
-    return runSolver(solver, command);
+    return run(solver, command);
 }
 
 } // namespace XuanSong

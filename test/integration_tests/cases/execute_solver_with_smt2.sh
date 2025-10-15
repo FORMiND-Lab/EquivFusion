@@ -17,7 +17,6 @@ input_files="$5"
 # Construct Miter and Export SMT-LIB
 equiv_miter --c1 "$name1" --c2 "$name2" "$input_files" --smtlib -o "$out_dir/miter.smt"
 
-# Run: Solver
-## run_solver --solver "$solver" --inputfile "$out_dir/output.smt"
-equiv_fusion -p "run_solver --solver "$solver" --inputfile "$out_dir/miter.smt""
+# Solver runner
+equiv_fusion -p "solver_runner --solver "$solver" --inputfile "$out_dir/miter.smt""
 

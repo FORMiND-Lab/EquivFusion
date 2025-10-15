@@ -1,6 +1,4 @@
-aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR} SRC_FILES)
-add_library(solving STATIC ${SRC_FILES})
-target_include_directories(solving PRIVATE ${INCLUDE_DIRS})
+add_subdirectory(solver-runner)
 
 # -------------------------------------------
 # Install Solvers

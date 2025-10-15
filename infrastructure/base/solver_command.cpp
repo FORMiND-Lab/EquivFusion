@@ -1,12 +1,12 @@
 #include "infrastructure/base/command.h"
 #include "infrastructure/log/log.h"
-#include "solving/run_solver.h"
+#include "solving/solver-runner/solver_runner.h"
 
 XUANSONG_NAMESPACE_HEADER_START
 
 struct SolverCommand : public Command {
 public:
-    SolverCommand() : Command("run_solver", "run solver") {}
+    SolverCommand() : Command("solver_runner", "run solver") {}
     ~SolverCommand() override = default;
 
     void preExecute() override {
@@ -35,7 +35,7 @@ public:
             logError("--inputfile is required");
             return;
         }
-        XuanSong::RunSolver::runSolver(solver, inputFile, opts);
+        XuanSong::SolverRunner::run(solver, inputFile, opts);
     }
 
     void postExecute() override {
@@ -44,7 +44,7 @@ public:
     void help() override {
         log("\n");
         log("OVERVIEW: %s - %s\n", getName().c_str(), getDescription().c_str());
-        log("USAGE:    run_solver <--solver solver> <--inputfile file> [options]\n");
+        log("USAGE:    solver_runner <--solver solver> <--inputfile file> [options]\n");
         log("OPTIONS:\n");
         log("   --solver <solver>\n");
         log("   --inputfile <file>\n");
