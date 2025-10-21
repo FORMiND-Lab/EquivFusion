@@ -1,4 +1,4 @@
-add_circt_library(EquivFusionDecomposeConcat
+add_circt_library(EquivFusionPassDecomposeConcat
     decompose_concat.cpp
 
     DEPENDS

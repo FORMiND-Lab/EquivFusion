@@ -1,6 +1,8 @@
 #ifndef EQUIVFUSION_EQUIV_MITER_TOOL_H
 #define EQUIVFUSION_EQUIV_MITER_TOOL_H
 
+#include "infrastructure/utils/namespace_macro.h"
+
 #include "llvm/Support/CommandLine.h"
 #include "mlir/IR/MLIRContext.h"
 
@@ -14,6 +16,8 @@
 
 namespace cl = llvm::cl;
 using namespace mlir;
+
+XUANSONG_NAMESPACE_HEADER_START
 
 class EquivMiterTool {
 public:
@@ -73,5 +77,6 @@ private:
         cl::init(OutputSMTLIB), cl::cat(mainCategory)};
 };
 
+XUANSONG_NAMESPACE_HEADER_END // namespace XuanSong
 
 #endif //EQUIVFUSION_EQUIV_MITER_TOOL_H

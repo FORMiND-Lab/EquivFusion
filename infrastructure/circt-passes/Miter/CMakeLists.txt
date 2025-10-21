@@ -1,4 +1,4 @@
-add_circt_library(EquivFusionMiter
+add_circt_library(EquivFusionPassEquivMiter
     miter.cpp
 
     DEPENDS

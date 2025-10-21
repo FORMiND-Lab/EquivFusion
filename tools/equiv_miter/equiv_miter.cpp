@@ -3,6 +3,6 @@
 #include "infrastructure/tools/EquivMiterTool/equiv_miter_tool.h"
 
 int main(int argc, char **argv) {
-    EquivMiterTool equivMiterTool;
+    XuanSong::EquivMiterTool equivMiterTool;
     exit(equivMiterTool.run(argc, argv));
 }

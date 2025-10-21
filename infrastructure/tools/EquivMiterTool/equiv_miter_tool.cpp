@@ -45,6 +45,7 @@
 using namespace mlir;
 using namespace circt;
 
+XUANSONG_NAMESPACE_HEADER_START
 
 // Move all operations in `src` to `dest`. Rename all symbols in `src` to avoid
 // conflict.
@@ -266,3 +267,4 @@ int EquivMiterTool::run(int argc, char **argv) {
     return failed(result) ? 1 : 0;
 }
 
+XUANSONG_NAMESPACE_HEADER_END // namespace XuanSong

@@ -1,7 +1,7 @@
 add_library(EquivFusionToolEquivMiter equiv_miter_tool.cpp)
 
 target_link_libraries(EquivFusionToolEquivMiter
-    PUBLIC
+    PRIVATE
     CIRCTComb
     CIRCTCombToSMT
     CIRCTEmitTransforms
@@ -25,8 +25,8 @@ target_link_libraries(EquivFusionToolEquivMiter
 
     CIRCTArcTransforms
 
-    EquivFusionMiter
-    EquivFusionDecomposeConcat
+    EquivFusionPassEquivMiter
+    EquivFusionPassDecomposeConcat
 )
 
 llvm_update_compile_flags(EquivFusionToolEquivMiter)
