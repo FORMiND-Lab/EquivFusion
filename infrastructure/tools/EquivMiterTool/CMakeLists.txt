@@ -1,32 +1,32 @@
 add_library(EquivFusionToolEquivMiter equiv_miter_tool.cpp)
 
 target_link_libraries(EquivFusionToolEquivMiter
-        PRIVATE
-        CIRCTComb
-        CIRCTCombToSMT
-        CIRCTEmitTransforms
-        CIRCTHW
-        CIRCTHWToSMT
-        CIRCTOMTransforms
-        CIRCTSupport
-        CIRCTVerif
-        CIRCTVerifToSMT
+    PUBLIC
+    CIRCTComb
+    CIRCTCombToSMT
+    CIRCTEmitTransforms
+    CIRCTHW
+    CIRCTHWToSMT
+    CIRCTOMTransforms
+    CIRCTSupport
+    CIRCTVerif
+    CIRCTVerifToSMT
 
-        MLIRFuncDialect
-        MLIRFuncInlinerExtension
-        MLIRSMT
-        MLIRExportSMTLIB
+    MLIRFuncDialect
+    MLIRFuncInlinerExtension
+    MLIRSMT
+    MLIRExportSMTLIB
 
-        CIRCTHWTransforms
-        CIRCTCombToAIG
-        CIRCTAIGTransforms
-        CIRCTExportAIGER
-        CIRCTHWToBTOR2
+    CIRCTHWTransforms
+    CIRCTCombToAIG
+    CIRCTAIGTransforms
+    CIRCTExportAIGER
+    CIRCTHWToBTOR2
 
-        CIRCTArcTransforms
+    CIRCTArcTransforms
 
-        EquivFusionMiter
-        EquivFusionDecomposeConcat
+    EquivFusionMiter
+    EquivFusionDecomposeConcat
 )
 
 llvm_update_compile_flags(EquivFusionToolEquivMiter)
