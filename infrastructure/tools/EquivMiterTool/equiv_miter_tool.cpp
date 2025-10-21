@@ -1,4 +1,4 @@
-#include "infrastructure/tools/EquivMiteTool/equiv_miter_tool.h"
+#include "infrastructure/tools/EquivMiterTool/equiv_miter_tool.h"
 
 #include "circt/Conversion/CombToSMT.h"
 #include "circt/Conversion/HWToSMT.h"
@@ -143,7 +143,7 @@ LogicalResult EquivMiterTool::executeMiterToAIGER(mlir::PassManager &pm, ModuleO
     return aiger::exportAIGER(*ops.begin(), os);
 }
 
-LogicalResult EquivMiter::executeMiterToBTOR2(mlir::PassManager &pm, ModuleOp module, llvm::raw_ostream &os) {
+LogicalResult EquivMiterTool::executeMiterToBTOR2(mlir::PassManager &pm, ModuleOp module, llvm::raw_ostream &os) {
     EquivFusionMiterOptions opts = {firstModuleName, secondModuleName, EquivFusionMiter::MiterModeEnum::BTOR2};
     pm.addPass(createEquivFusionMiter(opts));
 
@@ -156,7 +156,7 @@ LogicalResult EquivMiter::executeMiterToBTOR2(mlir::PassManager &pm, ModuleOp mo
     return pm.run(module);
 }
 
-LogicalResult EquivMiter::executeMiter(MLIRContext &context) {
+LogicalResult EquivMiterTool::executeMiter(MLIRContext &context) {
     // Create the timing manager we use to sample execution times.
     DefaultTimingManager tm;
     applyDefaultTimingManagerCLOptions(tm);

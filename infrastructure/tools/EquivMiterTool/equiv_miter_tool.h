@@ -4,13 +4,20 @@
 #include "llvm/Support/CommandLine.h"
 #include "mlir/IR/MLIRContext.h"
 
+#include "llvm/Support/CommandLine.h"
+#include "mlir/IR/BuiltinOps.h"
+#include "mlir/IR/OwningOpRef.h"
+#include "mlir/IR/BuiltinAttributes.h"
+#include "mlir/Pass/PassManager.h"
+#include "mlir/Support/LogicalResult.h"
+#include "mlir/Support/Timing.h"
+
 namespace cl = llvm::cl;
 using namespace mlir;
-using namespace circt;
 
 class EquivMiterTool {
 public:
-    EquivMiterTools() = default;
+    EquivMiterTool() = default;
 
 public:
     int run(int argc, char **argv);
@@ -28,7 +35,7 @@ private:
 
 private:
     // options
-    cl::OptionsCategory mainCategory{"equiv_miter Options"};
+    cl::OptionCategory mainCategory{"equiv_miter Options"};
 
     cl::opt<std::string> firstModuleName{
         "c1", cl::Required,

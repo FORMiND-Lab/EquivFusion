@@ -1,3 +1,4 @@
+#include <cstdio>
 #include <readline/history.h>
 #include <readline/readline.h>
 #include "infrastructure/base/command.h"
