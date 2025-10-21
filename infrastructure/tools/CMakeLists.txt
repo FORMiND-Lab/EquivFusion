@@ -1,1 +1,1 @@
-add_subdirectory(EquivMiter)
+add_subdirectory(EquivMiterTool)
