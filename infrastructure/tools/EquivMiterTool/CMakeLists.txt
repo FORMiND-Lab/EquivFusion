@@ -31,5 +31,3 @@ target_link_libraries(EquivFusionToolEquivMiter
 
 llvm_update_compile_flags(EquivFusionToolEquivMiter)
 mlir_check_all_link_libraries(EquivFusionToolEquivMiter)
-
-
