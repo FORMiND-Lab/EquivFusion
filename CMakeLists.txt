@@ -151,6 +151,7 @@ include_directories(${EQUIVFUSION_INCLUDE_DIRS})
 # -------------------------------------------
 
 add_subdirectory(include)
+add_subdirectory(libs)
 add_subdirectory(solving)
 add_subdirectory(infrastructure)
 add_subdirectory(client)

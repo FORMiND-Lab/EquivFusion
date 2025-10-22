@@ -1,4 +1,4 @@
-#include "infrastructure/tools/EquivMiterTool/equiv_miter_tool.h"
+#include "Tools/EquivMiterTool/equiv_miter_tool.h"
 
 #include "circt/Conversion/CombToSMT.h"
 #include "circt/Conversion/HWToSMT.h"
