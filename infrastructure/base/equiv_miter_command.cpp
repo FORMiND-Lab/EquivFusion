@@ -13,6 +13,7 @@ public:
     }
 
     void execute(const std::vector<std::string> &args) override {
+        // TODO(taomengxia: 20251022): Temp Code
         std::vector<std::string> argvStorage = {"equiv_miter"};
         argvStorage.insert(argvStorage.end(), args.begin(), args.end());
         
@@ -24,7 +25,7 @@ public:
         EquivMiterTool equivMiterTool;
         int result = equivMiterTool.run(argv.size(), argv.data());
         if (result != 0) {
-            log("Error:  equiv_miter failed");
+            log("Error: equiv_miter failed");
         }
     }
 
@@ -32,6 +33,9 @@ public:
     }
 
     void help() override {
+        // TODO(taomengxia: 20251022): Temp code
+        std::vector<std::string> args = {"--help"};
+        execute(args);
     }
 } equivMiterCommand;
 
