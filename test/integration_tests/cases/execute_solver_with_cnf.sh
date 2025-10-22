@@ -1,5 +1,4 @@
 #!/usr/bin/bash
-
 set -euo pipefail
 
 # Execute LEC
@@ -12,10 +11,11 @@ solver="$1"
 name1="$2"
 name2="$3"
 out_dir="$4"
-input_files=("${@:5}")
+input_files="${@:5}"
 
+echo $input_files
 # Construct Miter and Export to AIGER
-equiv_miter --c1 "$name1" --c2 "$name2" "${input_files[@]}" --aiger -o "$out_dir/miter.aiger"
+equiv_fusion -p "equiv_miter --c1 "$name1" --c2 "$name2" $input_files --aiger -o "$out_dir/miter.aiger""
 
 # Convert aiger to cnf
 aigtocnf "$out_dir/miter.aiger" "$out_dir/miter.cnf"
