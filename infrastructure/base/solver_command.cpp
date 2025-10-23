@@ -27,12 +27,10 @@ public:
             }
         }
         
-        if (solver.empty()) {
-            logError("--solver is required");
-            return;
-        }
-        if (inputFile.empty()) {
-            logError("--inputfile is required");
+        if (solver.empty() || inputFile.empty()) {
+            log("Command solver_runner Failed:\n");
+            if (solver.empty())     log("   --solver is required!\n");
+            if (inputFile.empty())  log("   --inputfile is required!\n");
             return;
         }
         XuanSong::SolverRunner::run(solver, inputFile, opts);
@@ -43,12 +41,12 @@ public:
 
     void help() override {
         log("\n");
-        log("OVERVIEW: %s - %s\n", getName().c_str(), getDescription().c_str());
-        log("USAGE:    solver_runner <--solver solver> <--inputfile file> [options]\n");
-        log("OPTIONS:\n");
-        log("   --solver <solver>\n");
-        log("   --inputfile <file>\n");
-        log("   --opts <options>\n");
+        log("   OVERVIEW: %s - %s\n", getName().c_str(), getDescription().c_str());
+        log("   USAGE:    solver_runner <--solver solver> <--inputfile file> [options]\n");
+        log("   OPTIONS:\n");
+        log("       --solver <solver>\n");
+        log("       --inputfile <file>\n");
+        log("       --opts <options>\n");
         log("\n");
     }
 

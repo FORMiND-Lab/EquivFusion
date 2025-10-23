@@ -157,18 +157,7 @@ LogicalResult EquivMiterTool::executeMiterToBTOR2(mlir::PassManager &pm, ModuleO
     return pm.run(module);
 }
 
-LogicalResult EquivMiterTool::executeMiter(MLIRContext &context) {
-    // Create the timing manager we use to sample execution times.
-    DefaultTimingManager tm;
-    applyDefaultTimingManagerCLOptions(tm);
-    auto ts = tm.getRootScope();
-
-    auto parsedModule = parseAndMergeModules(context, ts);
-    if (failed(parsedModule))
-        return failure();
-
-    OwningOpRef<ModuleOp> module = std::move(parsedModule.value());
-
+LogicalResult EquivMiterTool::executeMiter(MLIRContext &context, OwningOpRef<ModuleOp>& module, mlir::TimingScope &ts) {
     // Create the output directory or output file depending on our mode.
     std::optional<std::unique_ptr<llvm::ToolOutputFile>> outputFile;
     std::string errorMessage;
@@ -180,15 +169,9 @@ LogicalResult EquivMiterTool::executeMiter(MLIRContext &context) {
     }
 
     PassManager pm(&context);
-    pm.enableVerifier(verifyPasses);
     pm.enableTiming(ts);
     if (failed(applyPassManagerCLOptions(pm)))
         return failure();
-
-    if (verbosePassExecutions)
-        pm.addInstrumentation(
-            std::make_unique<VerbosePassInstrumentation<mlir::ModuleOp>>(
-                "equiv_miter"));
 
     LogicalResult result = failure();
     switch (outputFormat) {
@@ -227,18 +210,9 @@ int EquivMiterTool::run(int argc, char **argv) {
     registerPassManagerCLOptions();
     registerDefaultTimingManagerCLOptions();
     registerAsmPrinterCLOptions();
-    cl::AddExtraVersionPrinter(
-        [](llvm::raw_ostream &os) { os << circt::getCirctVersion() << '\n'; });
 
     // Parse the command-line options provided by the user.
-    cl::ParseCommandLineOptions(
-        argc, argv,
-        "equiv_miter - construct Miter\n\n"
-        "\tThis tool construct miter for two input circuit descriptions.\n");
-
-    // Set the bug report message to indicate users should file issues on
-    // llvm/circt and not llvm/llvm-project.
-    llvm::setBugReportMsg(circt::circtBugReportMsg);
+    cl::ParseCommandLineOptions(argc, argv, "equiv_miter");
 
     // Register the supported CIRCT dialects and create a context to work with.
     DialectRegistry registry;
@@ -256,15 +230,33 @@ int EquivMiterTool::run(int argc, char **argv) {
     mlir::func::registerInlinerExtension(registry);
     MLIRContext context(registry);
 
-    // Setup of diagnostic handling.
-    llvm::SourceMgr sourceMgr;
-    SourceMgrDiagnosticHandler sourceMgrHandler(sourceMgr, &context);
-    // Avoid printing a superfluous note on diagnostic emission.
-    context.printOpOnDiagnostic(false);
+    // Create the timing manager we use to sample execution times.
+    mlir::DefaultTimingManager tm;
+    mlir::applyDefaultTimingManagerCLOptions(tm);
+    auto ts = tm.getRootScope();
+
+    // Parse and merge modules
+    auto parsedModule = parseAndMergeModules(context, ts);
+    if (failed(parsedModule)) {
+        return -1;
+    }
+    OwningOpRef<ModuleOp> module = std::move(parsedModule.value());
 
     // Perform the logical equivalence checking
-    LogicalResult result = executeMiter(context);
+    LogicalResult result = executeMiter(context, module, ts);
     return failed(result) ? 1 : 0;
+}
+
+int EquivMiterTool::run(const std::vector<std::string> &args) {
+    std::vector<std::string> argvStorage = {"equiv_miter"};
+    argvStorage.insert(argvStorage.end(), args.begin(), args.end());
+
+    std::vector<char*> argv;
+    for (auto &str : argvStorage) {
+        argv.push_back(str.data());
+    }
+
+    return run(argv.size(), argv.data());
 }
 
 XUANSONG_NAMESPACE_HEADER_END // namespace XuanSong
