@@ -34,6 +34,7 @@
 #include "circt/Transforms/Passes.h"
 
 #include "circt-passes/FuncToHWModule/Passes.h"
+#include "circt-passes/RemoveRedundantFunc/Passes.h"
 
 namespace cl = llvm::cl;
 
@@ -47,6 +48,11 @@ static cl::opt<std::string> inputFilename(cl::Positional, cl::desc("Input filena
 static cl::opt<std::string> outputFilename("o", cl::desc("Output filename"),
    cl::value_desc("filename"),
    cl::init("-"),
+   cl::cat(mainCategory));
+
+static cl::opt<std::string> topFunctionName("top", cl::desc("Top function name"),
+   cl::value_desc("function name"),
+   cl::init(""),
    cl::cat(mainCategory));
 
 static llvm::LogicalResult 
@@ -75,6 +81,12 @@ processInput(mlir::MLIRContext &context, mlir::TimingScope &ts,
     pm.enableTiming(ts);
     if (llvm::failed(mlir::applyPassManagerCLOptions(pm))) {
         return llvm::failure();
+    }
+
+    if (!topFunctionName.getValue().empty()) {
+        circt::EquivFusionRemoveRedundantFuncPassOptions options;
+        options.topFunc = topFunctionName.getValue();
+        pm.addPass(circt::createEquivFusionRemoveRedundantFuncPass(options));
     }
 
     // Unroll affine loops.

@@ -23,6 +23,7 @@ target_link_libraries(equivfusion-hls
   MLIRAffineToStandard
 
   FuncToHWModule
+  EquivFusionRemoveRedundantFunc
   log
 )
 
