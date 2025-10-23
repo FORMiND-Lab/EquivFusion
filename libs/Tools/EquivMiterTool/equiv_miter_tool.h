@@ -25,7 +25,7 @@ public:
 
 public:
     int run(int argc, char **argv);
-    int run(const std::vector<std::string> &args)
+    int run(const std::vector<std::string> &args);
 
 private:
     FailureOr<OwningOpRef<ModuleOp>> parseAndMergeModules(MLIRContext &context, TimingScope &ts);

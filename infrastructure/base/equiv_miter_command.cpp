@@ -1,6 +1,6 @@
 #include "infrastructure/base/command.h"
 #include "infrastructure/log/log.h"
-#include "Tools/EquivMiterTool/equiv_miter_tool.h"
+#include "libs/Tools/EquivMiterTool/equiv_miter_tool.h"
 
 XUANSONG_NAMESPACE_HEADER_START
 

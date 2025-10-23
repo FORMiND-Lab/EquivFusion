@@ -1,4 +1,4 @@
-#include "Tools/EquivMiterTool/equiv_miter_tool.h"
+#include "libs/Tools/EquivMiterTool/equiv_miter_tool.h"
 
 #include "circt/Conversion/CombToSMT.h"
 #include "circt/Conversion/HWToSMT.h"
@@ -47,10 +47,8 @@ using namespace circt;
 
 XUANSONG_NAMESPACE_HEADER_START
 
-// Move all operations in `src` to `dest`. Rename all symbols in `src` to avoid
-// conflict.
-FailureOr<StringAttr> EquivMiterTool::mergeModules(ModuleOp dest, ModuleOp src,
-                                                          StringAttr name) {
+// Move all operations in `src` to `dest`. Rename all symbols in `src` to avoid conflict.
+FailureOr<StringAttr> EquivMiterTool::mergeModules(ModuleOp dest, ModuleOp src, StringAttr name) {
     SymbolTable destTable(dest), srcTable(src);
     StringAttr newName = {};
     for (auto &op : src.getOps()) {
