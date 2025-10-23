@@ -1,3 +1,4 @@
 add_subdirectory(Miter)
 add_subdirectory(DecomposeConcat)
 add_subdirectory(FuncToHWModule)
+add_subdirectory(RemoveRedundantFunc)
