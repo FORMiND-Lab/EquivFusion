@@ -25,13 +25,14 @@ public:
 
 public:
     int run(int argc, char **argv);
+    int run(const std::vector<std::string> &args);
 
 private:
     FailureOr<OwningOpRef<ModuleOp>> parseAndMergeModules(MLIRContext &context, TimingScope &ts);
     FailureOr<StringAttr> mergeModules(ModuleOp dest, ModuleOp src, StringAttr name);
 
 private:
-    LogicalResult executeMiter(MLIRContext &context);
+    LogicalResult executeMiter(MLIRContext &context, OwningOpRef<ModuleOp>& module, mlir::TimingScope &ts);
     LogicalResult executeMiterToSMTLIB(mlir::PassManager &pm, ModuleOp module, llvm::raw_ostream &os);
     LogicalResult executeMiterToAIGER(mlir::PassManager &pm, ModuleOp module, llvm::raw_ostream &os);
     LogicalResult executeMiterToBTOR2(mlir::PassManager &pm, ModuleOp module, llvm::raw_ostream &os);
@@ -52,28 +53,20 @@ private:
         cl::value_desc("module name"), cl::cat(mainCategory)};
 
     cl::list<std::string> inputFilenames{cl::Positional, cl::OneOrMore,
-                                        cl::desc("<input files>"),
-                                        cl::cat(mainCategory)};
+                                         cl::desc("<input files>"),
+                                         cl::cat(mainCategory)};
 
     cl::opt<std::string> outputFilename{"o", cl::desc("Output filename"),
-                                       cl::value_desc("filename"),
-                                       cl::init("-"),
-                                       cl::cat(mainCategory)};
-
-    cl::opt<bool> verifyPasses{"verify-each",
-                          cl::desc("Run the verifier after each transformation pass"),
-                          cl::init(true), cl::cat(mainCategory)};
-
-    cl::opt<bool> verbosePassExecutions{"verbose-pass-executions",
-                                       cl::desc("Log executions of toplevel module passes"),
-                                       cl::init(false), cl::cat(mainCategory)};
+                                        cl::value_desc("filename"),
+                                        cl::init("-"),
+                                        cl::cat(mainCategory)};
 
     enum OutputFormat { OutputSMTLIB, OutputAIGER, OutputBTOR2 };
     cl::opt<OutputFormat> outputFormat{
         cl::desc("Specify output format"),
         cl::values(clEnumValN(OutputSMTLIB, "smtlib", "smt object file"),
-                  clEnumValN(OutputAIGER,  "aiger",  "aiger object file"),
-                  clEnumValN(OutputBTOR2,  "btor2",  "btor2 object file")),
+                   clEnumValN(OutputAIGER,  "aiger",  "aiger object file"),
+                   clEnumValN(OutputBTOR2,  "btor2",  "btor2 object file")),
         cl::init(OutputSMTLIB), cl::cat(mainCategory)};
 };
 
