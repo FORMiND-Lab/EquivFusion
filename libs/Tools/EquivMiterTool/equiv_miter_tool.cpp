@@ -1,4 +1,5 @@
 #include "libs/Tools/EquivMiterTool/equiv_miter_tool.h"
+#include "infrastructure/log/log.h"
 
 #include "circt/Conversion/CombToSMT.h"
 #include "circt/Conversion/HWToSMT.h"
@@ -25,8 +26,6 @@
 #include "mlir/Support/FileUtilities.h"
 #include "mlir/Target/SMTLIB/ExportSMTLIB.h"
 #include "mlir/Transforms/Passes.h"
-#include "llvm/Support/CommandLine.h"
-#include "llvm/Support/InitLLVM.h"
 #include "llvm/Support/PrettyStackTrace.h"
 #include "llvm/Support/SourceMgr.h"
 #include "llvm/Support/ToolOutputFile.h"
@@ -75,28 +74,21 @@ FailureOr<StringAttr> EquivMiterTool::mergeModules(ModuleOp dest, ModuleOp src, 
 }
 
 // Parse one or two MLIR modules and merge it into a single module.
-FailureOr<OwningOpRef<ModuleOp>> EquivMiterTool::parseAndMergeModules(MLIRContext &context, TimingScope &ts) {
-    auto parserTimer = ts.nest("Parse and merge MLIR input(s)");
-
-    if (inputFilenames.size() > 2) {
-        llvm::errs() << "more than 2 files are provided!\n";
-        return failure();
-    }
-
-    auto module = parseSourceFile<ModuleOp>(inputFilenames[0], &context);
+FailureOr<OwningOpRef<ModuleOp>> EquivMiterTool::parseAndMergeModules(MLIRContext &context) {
+    auto module = parseSourceFile<ModuleOp>(options_.inputFilenames[0], &context);
     if (!module)
         return failure();
 
-    if (inputFilenames.size() == 2) {
-        auto moduleOpt = parseSourceFile<ModuleOp>(inputFilenames[1], &context);
+    if (options_.inputFilenames.size() == 2) {
+        auto moduleOpt = parseSourceFile<ModuleOp>(options_.inputFilenames[1], &context);
         if (!moduleOpt)
             return failure();
         auto result = mergeModules(module.get(), moduleOpt.get(),
-                                   StringAttr::get(&context, secondModuleName));
+                                   StringAttr::get(&context, options_.secondModuleName));
         if (failed(result))
             return failure();
-
-        secondModuleName.setValue(result->getValue().str());
+        
+        options_.secondModuleName = result->getValue().str();
     }
 
     return module;
@@ -107,7 +99,8 @@ LogicalResult EquivMiterTool::executeMiterToSMTLIB(mlir::PassManager &pm, Module
     pm.addPass(emit::createStripEmitPass());
 
     pm.addPass(hw::createFlattenModules());
-    EquivFusionMiterOptions opts = {firstModuleName, secondModuleName, EquivFusionMiter::MiterModeEnum::SMTLIB};
+    
+    EquivFusionMiterOptions opts = {options_.firstModuleName, options_.secondModuleName, options_.miterMode};
     pm.addPass(createEquivFusionMiter(opts));
 
     pm.addPass(createConvertHWToSMT());
@@ -124,7 +117,7 @@ LogicalResult EquivMiterTool::executeMiterToSMTLIB(mlir::PassManager &pm, Module
 
 
 LogicalResult EquivMiterTool::executeMiterToAIGER(mlir::PassManager &pm, ModuleOp module, llvm::raw_ostream &os) {
-    EquivFusionMiterOptions opts = {firstModuleName, secondModuleName, EquivFusionMiter::MiterModeEnum::AIGER};
+    EquivFusionMiterOptions opts = {options_.firstModuleName, options_.secondModuleName, options_.miterMode};
     pm.addPass(createEquivFusionMiter(opts));
 
     pm.addPass(hw::createFlattenModules());
@@ -143,7 +136,7 @@ LogicalResult EquivMiterTool::executeMiterToAIGER(mlir::PassManager &pm, ModuleO
 }
 
 LogicalResult EquivMiterTool::executeMiterToBTOR2(mlir::PassManager &pm, ModuleOp module, llvm::raw_ostream &os) {
-    EquivFusionMiterOptions opts = {firstModuleName, secondModuleName, EquivFusionMiter::MiterModeEnum::BTOR2};
+    EquivFusionMiterOptions opts = {options_.firstModuleName, options_.secondModuleName, options_.miterMode};
     pm.addPass(createEquivFusionMiter(opts));
 
     pm.addPass(hw::createFlattenModules());
@@ -155,31 +148,28 @@ LogicalResult EquivMiterTool::executeMiterToBTOR2(mlir::PassManager &pm, ModuleO
     return pm.run(module);
 }
 
-LogicalResult EquivMiterTool::executeMiter(MLIRContext &context, OwningOpRef<ModuleOp>& module, mlir::TimingScope &ts) {
+LogicalResult EquivMiterTool::executeMiter(MLIRContext &context, OwningOpRef<ModuleOp>& module) {
     // Create the output directory or output file depending on our mode.
     std::optional<std::unique_ptr<llvm::ToolOutputFile>> outputFile;
     std::string errorMessage;
     // Create an output file.
-    outputFile.emplace(openOutputFile(outputFilename, &errorMessage));
+    outputFile.emplace(openOutputFile(options_.outputFilename, &errorMessage));
     if (!outputFile.value()) {
         llvm::errs() << errorMessage << "\n";
         return failure();
     }
 
     PassManager pm(&context);
-    pm.enableTiming(ts);
-    if (failed(applyPassManagerCLOptions(pm)))
-        return failure();
 
     LogicalResult result = failure();
-    switch (outputFormat) {
-    case OutputSMTLIB:
+    switch (options_.miterMode) {
+    case EquivFusionMiter::MiterModeEnum::SMTLIB:
         result = executeMiterToSMTLIB(pm, module.get(), outputFile.value()->os());
         break;
-    case OutputAIGER:
+    case EquivFusionMiter::MiterModeEnum::AIGER:
         result = executeMiterToAIGER(pm, module.get(), outputFile.value()->os());
         break;
-    case OutputBTOR2:
+    case EquivFusionMiter::MiterModeEnum::BTOR2:
         result = executeMiterToBTOR2(pm, module.get(), outputFile.value()->os());
         break;
     }
@@ -192,26 +182,8 @@ LogicalResult EquivMiterTool::executeMiter(MLIRContext &context, OwningOpRef<Mod
 }
 
 
-/// The entry point for the `equiv_miter` tool:
-/// configures and parses the command-line options,
-/// registers all dialects within a MLIR context,
-/// and calls the `executeMiter` function to do the actual work.
-int EquivMiterTool::run(int argc, char **argv) {
-    llvm::InitLLVM y(argc, argv);
-
-    // Hide default LLVM options, other than for this tool.
-    // MLIR options are added below.
-    cl::HideUnrelatedOptions(mainCategory);
-
-    // Register any pass manager command line options.
-    registerMLIRContextCLOptions();
-    registerPassManagerCLOptions();
-    registerDefaultTimingManagerCLOptions();
-    registerAsmPrinterCLOptions();
-
-    // Parse the command-line options provided by the user.
-    cl::ParseCommandLineOptions(argc, argv, "equiv_miter");
-
+/// The entry point for the `equiv_miter` tool
+bool EquivMiterTool::run() {
     // Register the supported CIRCT dialects and create a context to work with.
     DialectRegistry registry;
     // clang-format off
@@ -228,33 +200,57 @@ int EquivMiterTool::run(int argc, char **argv) {
     mlir::func::registerInlinerExtension(registry);
     MLIRContext context(registry);
 
-    // Create the timing manager we use to sample execution times.
-    mlir::DefaultTimingManager tm;
-    mlir::applyDefaultTimingManagerCLOptions(tm);
-    auto ts = tm.getRootScope();
-
     // Parse and merge modules
-    auto parsedModule = parseAndMergeModules(context, ts);
+    auto parsedModule = parseAndMergeModules(context);
     if (failed(parsedModule)) {
         return -1;
     }
     OwningOpRef<ModuleOp> module = std::move(parsedModule.value());
 
     // Perform the logical equivalence checking
-    LogicalResult result = executeMiter(context, module, ts);
-    return failed(result) ? 1 : 0;
+    LogicalResult result = executeMiter(context, module);
+    return failed(result) ? false : true;
 }
 
-int EquivMiterTool::run(const std::vector<std::string> &args) {
-    std::vector<std::string> argvStorage = {"equiv_miter"};
-    argvStorage.insert(argvStorage.end(), args.begin(), args.end());
+bool EquivMiterTool::initOptions(const std::vector<std::string> &args) {
+    std::vector<std::string> remainingArgv;
 
-    std::vector<char*> argv;
-    for (auto &str : argvStorage) {
-        argv.push_back(str.data());
+    for (size_t idx = 0; idx < args.size(); idx++) {
+        auto arg = args[idx];
+        if (arg == "--c1" && idx + 1 < args.size()) {
+            options_.firstModuleName = args[++idx];
+        } else if (arg == "--c2" && idx + 1 < args.size()) {
+            options_.secondModuleName = args[++idx];
+        } else if (arg == "-o" && idx + 1 < args.size()) {
+            options_.outputFilename = args[++idx];
+        } else if (arg == "--mitermode" && idx + 1 < args.size()) {
+            auto val = args[++idx];
+            if (val == "aiger") {
+                options_.miterMode = EquivFusionMiter::MiterModeEnum::AIGER;
+            } else if (val == "btor2") {
+                options_.miterMode = EquivFusionMiter::MiterModeEnum::BTOR2;
+            } else if (val == "smtlib") {
+                options_.miterMode = EquivFusionMiter::MiterModeEnum::SMTLIB;
+            } else {
+                log("Wrong option value of --mitermode.\n");
+                return false;
+            }
+        } else {
+            options_.inputFilenames.push_back(arg);
+        }
+    }    
+
+    if (options_.firstModuleName.empty() || options_.secondModuleName.empty()) {
+        log("Both --c1 and --c2 must be specified.\n");
+        return false;
     }
 
-    return run(argv.size(), argv.data());
+    if (options_.inputFilenames.empty() || options_.inputFilenames.size() > 2) {
+        log("Must provide 1 or 2 input files.\n");
+        return false;
+    }
+
+    return true;
 }
 
 XUANSONG_NAMESPACE_HEADER_END // namespace XuanSong
