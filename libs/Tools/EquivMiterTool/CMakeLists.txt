@@ -27,6 +27,8 @@ target_link_libraries(EquivFusionToolEquivMiter
 
     EquivFusionPassEquivMiter
     EquivFusionPassDecomposeConcat
+
+    log
 )
 
 llvm_update_compile_flags(EquivFusionToolEquivMiter)

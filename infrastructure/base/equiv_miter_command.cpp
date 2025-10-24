@@ -14,9 +14,13 @@ public:
 
     void execute(const std::vector<std::string> &args) override {
         EquivMiterTool equivMiterTool;
-        int result = equivMiterTool.run(args);
-        if (result != 0) {
-            log("[Command Failed]: equiv_miter failed\n\n");
+
+        if (!equivMiterTool.initOptions(args)) {
+            log("[equiv_miter]: options error\n\n");
+            return;
+        }
+        if (!equivMiterTool.run()) {
+            log("[equiv_miter]: execute error\n\n");
         }
     }
 
@@ -31,10 +35,7 @@ public:
         log("       --c1 <module name>      - Specify a named module for the first circuit of the comparison\n");
         log("       --c2 <module name>      - Specify a named module for the second circuit of the comparison\n");
         log("       -o <filename>           - Output filename\n");
-        log("       Specify output format\n");
-        log("           --smtlib                - smt object file [default]\n");
-        log("           --aiger                 - aiger object file\n");
-        log("           --btor2                 - btor2 object file\n");
+        log("       --mitermode             - MiterMode [smtlib, aiger, btor2], default is smtlib\n");
         log("   Example:");
         log("       equiv_miter --c1 mod1 --c2 mod2 file1.mlir file2.mlir");
         log("\n\n");

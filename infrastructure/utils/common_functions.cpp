@@ -53,6 +53,8 @@ static char **readline_completion (const char *text, int start, int) {
 }
 
 void runCommand(std::string commandStr) {  
+    add_history(commandStr.c_str());
+
     std::string commandName = nextToken(commandStr, " \t\n\r");
     std::string token = nextToken(commandStr, " \t\n\r");
     std::vector<std::string> args;
@@ -83,7 +85,6 @@ void runShell() {
             continue;
         }
 
-        add_history(command);
         commandStr.erase(0, commandStr.find_first_not_of(" \t\n\r"));
 
         if (commandStr.substr(0, 4) == "exit" || commandStr.substr(0, 4) == "quit") { 

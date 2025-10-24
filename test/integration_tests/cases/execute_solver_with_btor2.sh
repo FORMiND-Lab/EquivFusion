@@ -15,7 +15,7 @@ out_dir="$4"
 input_files="${@:5}"
 
 # Construct Miter and Export to BTOR2
-equiv_fusion -p "equiv_miter --c1 "$name1" --c2 "$name2" $input_files --btor2 -o "$out_dir/miter.btor2""
+equiv_fusion -p "equiv_miter --c1 "$name1" --c2 "$name2" $input_files --mitermode btor2 -o "$out_dir/miter.btor2""
 
 # Solver runner
 equiv_fusion -p "solver_runner --solver "$solver" --inputfile "$out_dir/miter.btor2""
