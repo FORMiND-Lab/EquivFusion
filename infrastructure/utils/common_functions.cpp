@@ -1,6 +1,5 @@
 #include <iostream>
 #include <vector>
-#include <unordered_map>
 #include <readline/readline.h>
 #include <readline/history.h>
 #include "infrastructure/base/commandManager.h"
@@ -27,9 +26,9 @@ std::string nextToken(std::string &text, std::string sep) {
 
 static char *readline_cmd_generator(const char *text, int state)
 {
-	static std::unordered_map<std::string, Command*>::iterator it;
+	static std::map<std::string, Command*>::iterator it;
 	static int len;
-    static std::unordered_map<std::string, Command*> command_register = CommandManager::getInstance()->getRegisteredCommands();
+    static std::map<std::string, Command*> command_register = CommandManager::getInstance()->getRegisteredCommands();
 
 
 	if (!state) {

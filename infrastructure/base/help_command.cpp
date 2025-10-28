@@ -20,7 +20,7 @@ public:
         CommandManager *commandMgr = CommandManager::getInstance();
 
         if (args.empty()) {
-            std::unordered_map<std::string, Command *> registeredCommands = commandMgr->getRegisteredCommands();
+            std::map<std::string, Command *> registeredCommands = commandMgr->getRegisteredCommands();
             log("\n");
             for (auto &command : registeredCommands) {
                 log("    %-30s %s\n", command.first.c_str(), command.second->getDescription().c_str());

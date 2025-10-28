@@ -9,8 +9,12 @@ target_link_libraries(base
     PUBLIC
     ${READLINE_LIBRARY}
     log
+
+    MLIRFuncInlinerExtension
+
     EquivFusionSolverRunner
     EquivFusionToolEquivMiter
+    EquivFusionBackend
 )
 
 llvm_update_compile_flags(base)
