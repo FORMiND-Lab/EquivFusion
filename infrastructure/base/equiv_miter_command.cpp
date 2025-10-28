@@ -1,6 +1,6 @@
-#include "infrastructure/base/command.h"
+#include "infrastructure/base/commandManager.h"
 #include "infrastructure/log/log.h"
-#include "libs/Tools/EquivMiterTool/equiv_miter_tool.h"
+#include "libs/Tools/EquivMiter/equiv_miter.h"
 
 XUANSONG_NAMESPACE_HEADER_START
 
@@ -19,7 +19,12 @@ public:
             log("[equiv_miter]: options error\n\n");
             return;
         }
-        if (!equivMiterTool.run()) {
+
+        mlir::MLIRContext& context = *CommandManager::getInstance()->getGlobalContext();
+        mlir::OwningOpRef<mlir::ModuleOp> outputModuleOp;
+        if (equivMiterTool.run(context, outputModuleOp)) {
+            CommandManager::getInstance()->setModuleOp(outputModuleOp);
+        } else {
             log("[equiv_miter]: execute error\n\n");
         }
     }
@@ -34,7 +39,6 @@ public:
         log("   OPTIONS:\n");
         log("       --c1 <module name>      - Specify a named module for the first circuit of the comparison\n");
         log("       --c2 <module name>      - Specify a named module for the second circuit of the comparison\n");
-        log("       -o <filename>           - Output filename\n");
         log("       --mitermode             - MiterMode [smtlib, aiger, btor2], default is smtlib\n");
         log("   Example:");
         log("       equiv_miter --c1 mod1 --c2 mod2 file1.mlir file2.mlir");
