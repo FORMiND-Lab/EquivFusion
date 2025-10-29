@@ -364,9 +364,7 @@ FuncToHWModulePass::buildHWModuleOPFromFuncOP(mlir::OpBuilder &builder, mlir::fu
             mlir::Attribute argAttr = (*argAttrs)[idx];
             mlir::DictionaryAttr dictAttr = llvm::dyn_cast_or_null<mlir::DictionaryAttr>(argAttr);
             if (dictAttr) {
-                if (mlir::StringAttr nameAttr = dictAttr.getAs<mlir::StringAttr>("name")) { 
-                    inputName = nameAttr.getValue().str();
-                } else if (mlir::StringAttr nameAttr = dictAttr.getAs<mlir::StringAttr>("sym_name")) {
+                if (mlir::StringAttr nameAttr = dictAttr.getAs<mlir::StringAttr>("polygeist.param_name")) { 
                     inputName = nameAttr.getValue().str();
                 }
             }

@@ -12,12 +12,12 @@ void LZC(uint8_t data_in, uint8_t *lzc) {
 }
 */
 
-uint8_t LZC(uint8_t data_in) {
+uint8_t LZC(uint8_t mant_in) {
     uint8_t count = 0;
     bool skip = false;
     for (int i = 7; i >= 1; i--) {
     	if (!skip) {
-	    if ((data_in >> i) & 1) {
+	    if ((mant_in >> i) & 1) {
 	        skip = true;
 	    } else {
 	        count++;
