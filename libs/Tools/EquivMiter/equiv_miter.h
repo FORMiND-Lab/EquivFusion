@@ -11,24 +11,27 @@
 
 XUANSONG_NAMESPACE_HEADER_START
 
-class EquivMiterTool {
-public:
-    EquivMiterTool() = default;
+struct EquivMiterImplOptions {
+    std::string firstModuleName;
+    std::string secondModuleName;
+    std::vector<std::string> inputFilenames;
+    std::string outputFilename;
+    circt::EquivFusionMiter::MiterModeEnum miterMode {circt::EquivFusionMiter::MiterModeEnum::SMTLIB};
+};
 
+class EquivMiterImpl {
 public:
-    bool initOptions(const std::vector<std::string>& args);
-    bool run(mlir::MLIRContext &context, mlir::OwningOpRef<mlir::ModuleOp>& outputModule);
+    EquivMiterImpl() = default;
 
 private:
-    mlir::FailureOr<mlir::OwningOpRef<mlir::ModuleOp>> parseAndMergeModules(mlir::MLIRContext &context);
-    mlir::FailureOr<mlir::StringAttr> mergeModules(mlir::ModuleOp dest, mlir::ModuleOp src, mlir::StringAttr name);
+    static bool parserOptions(const std::vector<std::string>& args, EquivMiterImplOptions& opts);
 
-private:
-    std::string firstModuleName_;
-    std::string secondModuleName_;
-    std::vector<std::string> inputFilenames_;
-    circt::EquivFusionMiter::MiterModeEnum miterMode_ {circt::EquivFusionMiter::MiterModeEnum::SMTLIB};
-    bool verbose_ {false};
+public:
+    static void help(const std::string& name, const std::string& description);
+
+    static bool run(const std::vector<std::string>& args,
+                    mlir::MLIRContext &context, mlir::ModuleOp inputModule, 
+                    mlir::OwningOpRef<mlir::ModuleOp>& outputModule);
 };
 
 XUANSONG_NAMESPACE_HEADER_END // namespace XuanSong

@@ -23,5 +23,7 @@ target_link_libraries(EquivFusionBackend
     CIRCTCombToAIG
     CIRCTAIGTransforms
     CIRCTExportAIGER
+
+    log
 )
 

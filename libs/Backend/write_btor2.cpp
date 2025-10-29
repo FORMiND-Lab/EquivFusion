@@ -1,4 +1,4 @@
-#include "backend/write_btor2.h"
+#include "libs/Backend/write_btor2.h"
 
 #include "circt/Dialect/HW/HWDialect.h"
 
@@ -14,10 +14,19 @@
 
 XUANSONG_NAMESPACE_HEADER_START
 
-bool WriteBTOR2Impl::run(mlir::MLIRContext &context, mlir::ModuleOp module) {
+bool WriteBTOR2Impl::run(const std::vector<std::string>& args,
+                         mlir::MLIRContext &context,
+                         mlir::ModuleOp inputModule,
+                         mlir::OwningOpRef<mlir::ModuleOp>& outputModule) {
+    BackendImplOptions opts;
+    if (!parserOptions(args, opts)) {
+        log("[write_btor]: parser options failed\n\n");
+        return false;
+    }
+
     std::optional<std::unique_ptr<llvm::ToolOutputFile>> outputFile;
     std::string errorMessage;
-    outputFile.emplace(mlir::openOutputFile(outputFilename_, &errorMessage));
+    outputFile.emplace(mlir::openOutputFile(opts.outputFilename, &errorMessage));
     if (!outputFile.value()) {
         llvm::errs() << errorMessage << "\n";
         return false;
@@ -30,7 +39,8 @@ bool WriteBTOR2Impl::run(mlir::MLIRContext &context, mlir::ModuleOp module) {
 
     pm.addPass(circt::createConvertHWToBTOR2Pass(outputFile.value()->os()));
     
-    if (failed(pm.run(module))) {
+    if (failed(pm.run(inputModule))) {
+        log("[write_btor]: run PassManager failed\n\n");
         return false;
     }
 
