@@ -4,21 +4,26 @@
 #include <vector>
 #include <string>
 #include "infrastructure/utils/namespace_macro.h"
+#include "infrastructure/log/log.h"
 
 #include "mlir/IR/BuiltinOps.h"
 #include "mlir/IR/MLIRContext.h"
 
 XUANSONG_NAMESPACE_HEADER_START
 
+struct BackendImplOptions {
+    std::string outputFilename {"-"};
+};
+
 class BackendBase {
 public:
     BackendBase() = default;
 
-    virtual bool initOptions(const std::vector<std::string>& args);
-    virtual bool run(mlir::MLIRContext& context, mlir::ModuleOp module) = 0;
+public:
+    static void help(const std::string& name, const std::string& description);
 
 protected:
-    std::string outputFilename_ {"-"};
+    static bool parserOptions(const std::vector<std::string>& args, BackendImplOptions& opts);
 };
 
 

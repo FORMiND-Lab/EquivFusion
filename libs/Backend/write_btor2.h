@@ -1,7 +1,7 @@
 #ifndef EQUIVFUSION_WRITE_BTOR2_H
 #define EQUIVFUSION_WRITE_BTOR2_H
 
-#include "backend/backend_base.h"
+#include "libs/Backend/backend_base.h"
 
 XUANSONG_NAMESPACE_HEADER_START
 
@@ -10,7 +10,9 @@ public:
     WriteBTOR2Impl() = default;
 
 public:
-    bool run(mlir::MLIRContext& context, mlir::ModuleOp module) override;
+    static bool run(const std::vector<std::string>&args,
+                    mlir::MLIRContext& context, mlir::ModuleOp inputModule,
+                    mlir::OwningOpRef<mlir::ModuleOp>& outputModule);
 };
 
 
