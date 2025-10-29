@@ -1,5 +1,5 @@
 module {
-  func.func @LZC(%arg0: i8) -> i8 attributes {llvm.linkage = #llvm.linkage<external>} {
+  func.func @LZC(%arg0: i8 {polygeist.param_name = "mant_in"}) -> i8 attributes {llvm.linkage = #llvm.linkage<external>} {
     %c8 = arith.constant 8 : index
     %c1_i8 = arith.constant 1 : i8
     %c0_i32 = arith.constant 0 : i32
