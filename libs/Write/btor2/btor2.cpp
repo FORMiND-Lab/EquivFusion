@@ -9,11 +9,14 @@
 
 XUANSONG_NAMESPACE_HEADER_START
 
-bool WriteBTOR2Impl::run(const std::vector<std::string>& args, mlir::MLIRContext &context,
-                         mlir::ModuleOp inputModule, mlir::OwningOpRef<mlir::ModuleOp>& outputModule) {
+bool WriteBTOR2Impl::run(const std::vector<std::string>& args, mlir::MLIRContext &context, mlir::ModuleOp inputModule) {
+    if (!inputModule) {
+        return true;
+    }
+
     WriteImplOptions opts;
     if (!parseOptions(args, opts)) {
-        log("[write_btor]: parser options failed\n\n");
+        log("[write_btor2]: parser options failed\n\n");
         return false;
     }
 
@@ -21,14 +24,14 @@ bool WriteBTOR2Impl::run(const std::vector<std::string>& args, mlir::MLIRContext
     std::string errorMessage;
     outputFile.emplace(mlir::openOutputFile(opts.outputFilename, &errorMessage));
     if (!outputFile.value()) {
-        llvm::errs() << errorMessage << "\n";
+        log("[write_btor2]: open output file failed[%s]\n\n", errorMessage.c_str());
         return false;
     }
     
     mlir::PassManager pm(&context);
     pm.addPass(circt::createConvertHWToBTOR2Pass(outputFile.value()->os()));
     if (failed(pm.run(inputModule))) {
-        log("[write_btor]: run PassManager failed\n\n");
+        log("[write_btor2]: run PassManager failed\n\n");
         return false;
     }
 

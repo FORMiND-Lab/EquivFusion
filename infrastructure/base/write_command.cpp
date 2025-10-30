@@ -19,10 +19,7 @@ public:
     void execute(const std::vector<std::string>& args) override {
         mlir::MLIRContext& context = *EquivFusionManager::getInstance()->getGlobalContext();
         mlir::ModuleOp inputModule = EquivFusionManager::getInstance()->getModuleOp();
-        mlir::OwningOpRef<mlir::ModuleOp> outputModule;
-        if (Impl::run(args, context, inputModule, outputModule)) {
-            EquivFusionManager::getInstance()->setModuleOp(outputModule);
-        }
+        Impl::run(args, context, inputModule);
     }
 
     void postExecute() override {
