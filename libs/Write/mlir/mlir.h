@@ -1,11 +1,11 @@
 #ifndef EQUIVFUSION_WRITE_MLIR_IMPL_H
 #define EQUIVFUSION_WRITE_MLIR_IMPL_H
 
-#include "libs/Backend/base/base.h"
+#include "libs/Write/base/base.h"
 
 XUANSONG_NAMESPACE_HEADER_START
 
-class WriteMLIRImpl final : public BackendBase {
+class WriteMLIRImpl final : public WriteBase {
 public:
     WriteMLIRImpl() = default;
 

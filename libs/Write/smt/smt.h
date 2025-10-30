@@ -1,22 +1,22 @@
-#ifndef EQUIVFUSION_WRITE_AIGER_H
-#define EQUIVFUSION_WRITE_AIGER_H
+#ifndef EQUIVFUSION_WRITE_SMT_H
+#define EQUIVFUSION_WRITE_SMT_H
 
-#include "libs/Backend/base/base.h"
+#include "libs/Write/base/base.h"
 
 XUANSONG_NAMESPACE_HEADER_START
 
-class WriteAIGERImpl final : public BackendBase {
+class WriteSMTImpl final : public WriteBase {
 public:
     static bool run(const std::vector<std::string>& args, mlir::MLIRContext& context,
                     mlir::ModuleOp inputModule, mlir::OwningOpRef<mlir::ModuleOp>& outputModule);
 
 private:
-    WriteAIGERImpl() = default;
+    WriteSMTImpl() = default;
 };
 
 
 XUANSONG_NAMESPACE_HEADER_END // namespace XuanSong
 
 
-#endif // EQUIVFUSION_WRITE_AIGER_H
+#endif // EQUIVFUSION_WRITE_SMT_H
 

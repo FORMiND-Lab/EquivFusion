@@ -1,5 +1,5 @@
 #include "infrastructure/log/log.h"
-#include "libs/Frontend/read_mlir.h"
+#include "libs/Read/read_mlir.h"
 
 #include "mlir/Parser/Parser.h"     // parseSourceFile  MLIRParser
 
@@ -12,7 +12,7 @@ bool ReadMLIRImpl::run(const std::vector<std::string>& args,
                        mlir::MLIRContext &context,
                        mlir::ModuleOp module,
                        mlir::OwningOpRef<mlir::ModuleOp>& outputModule) {
-    FrontendImplOptions opts;
+    ReadImplOptions opts;
     if (!initOptions(args, opts)) {
         log("read_mlir: options error\n\n");
         return false;
@@ -23,7 +23,7 @@ bool ReadMLIRImpl::run(const std::vector<std::string>& args,
     }
  
     for (const auto& inputFilename : opts.inputFilenames) {
-        auto fileModule = parseSourceFile<mlir::ModuleOp>(inputFilename, &context);
+        auto fileModule = mlir::parseSourceFile<mlir::ModuleOp>(inputFilename, &context);
         if (fileModule) {
             mergeModules(module, fileModule.get());
         }

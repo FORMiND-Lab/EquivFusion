@@ -7,7 +7,7 @@ XUANSONG_NAMESPACE_HEADER_START
 struct HelpCmd : public Command {
 public: 
     HelpCmd() : Command("help", "display help information") {}
-    ~HelpCmd() override = default;
+    ~HelpCmd() = default;
 
     HelpCmd(const HelpCmd &) = delete;
     HelpCmd &operator=(const HelpCmd &) = delete;

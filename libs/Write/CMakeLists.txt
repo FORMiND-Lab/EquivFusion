@@ -4,7 +4,7 @@ aux_source_directory(btor2  SOURCES_BTOR2)
 aux_source_directory(mlir   SOURCES_MLIR)
 aux_source_directory(smt    SOURCES_SMT)
 
-add_library(EquivFusionBackend
+add_library(EquivFusionWrite
     ${SOURCES_BASE}
     ${SOURCES_AIGER}
     ${SOURCES_BTOR2}
@@ -12,7 +12,7 @@ add_library(EquivFusionBackend
     ${SOURCES_SMT}
 )    
 
-target_link_libraries(EquivFusionBackend
+target_link_libraries(EquivFusionWrite
     PRIVATE
     CIRCTHW
    

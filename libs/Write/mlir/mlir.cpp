@@ -1,4 +1,4 @@
-#include "libs/Backend/mlir/mlir.h"
+#include "libs/Write/mlir/mlir.h"
 
 #include "mlir/Support/FileUtilities.h"
 #include "llvm/Support/ToolOutputFile.h"
@@ -7,7 +7,7 @@ XUANSONG_NAMESPACE_HEADER_START
 
 bool WriteMLIRImpl::run(const std::vector<std::string>& args, mlir::MLIRContext& context,
                         mlir::ModuleOp inputModule, mlir::OwningOpRef<mlir::ModuleOp>& outputModule) {
-    BackendImplOptions opts;
+    WriteImplOptions opts;
     if (!parseOptions(args, opts)) {
         log("write_mlir]: parse options failed\n\n");
         return false;
