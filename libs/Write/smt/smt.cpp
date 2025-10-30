@@ -9,8 +9,11 @@
 
 XUANSONG_NAMESPACE_HEADER_START
 
-bool WriteSMTImpl::run(const std::vector<std::string>& args, mlir::MLIRContext &context,
-                       mlir::ModuleOp inputModule, mlir::OwningOpRef<mlir::ModuleOp>& outputModule) {
+bool WriteSMTImpl::run(const std::vector<std::string>& args, mlir::MLIRContext &context, mlir::ModuleOp inputModule) {
+    if (!inputModule) {
+        return true;
+    }    
+
     WriteImplOptions opts;
     if (!parseOptions(args, opts)) {
         log("[write_smt]: parse options failed\n\n");
@@ -21,12 +24,12 @@ bool WriteSMTImpl::run(const std::vector<std::string>& args, mlir::MLIRContext &
     std::string errorMessage;
     outputFile.emplace(mlir::openOutputFile(opts.outputFilename, &errorMessage));
     if (!outputFile.value()) {
-        llvm::errs() << errorMessage << "\n";
+        log("[write_smt]: open output file failed[%s]\n\n", errorMessage.c_str());
         return false;
     }
     
     if (failed(mlir::smt::exportSMTLIB(inputModule, outputFile.value()->os()))) {
-        log("write_smt]: exportSMTLIB failed\n\n");
+        log("[write_smt]: exportSMTLIB failed\n\n");
         return false;
     }
 

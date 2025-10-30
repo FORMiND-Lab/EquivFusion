@@ -7,12 +7,10 @@ XUANSONG_NAMESPACE_HEADER_START
 
 class WriteMLIRImpl final : public WriteBase {
 public:
-    WriteMLIRImpl() = default;
+    static bool run(const std::vector<std::string>& args, mlir::MLIRContext& context, mlir::ModuleOp inputModule);
 
-public:
-    static bool run(const std::vector<std::string>& args,
-                    mlir::MLIRContext& context, mlir::ModuleOp inputModule,
-                    mlir::OwningOpRef<mlir::ModuleOp>& outputModule);
+private:
+    WriteMLIRImpl() = default;
 };
 
 XUANSONG_NAMESPACE_HEADER_END

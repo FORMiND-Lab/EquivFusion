@@ -5,23 +5,23 @@
 
 XUANSONG_NAMESPACE_HEADER_START
 
-bool WriteMLIRImpl::run(const std::vector<std::string>& args, mlir::MLIRContext& context,
-                        mlir::ModuleOp inputModule, mlir::OwningOpRef<mlir::ModuleOp>& outputModule) {
-    WriteImplOptions opts;
-    if (!parseOptions(args, opts)) {
-        log("write_mlir]: parse options failed\n\n");
-        return false;
-    }
-
+bool WriteMLIRImpl::run(const std::vector<std::string>& args, mlir::MLIRContext& context, mlir::ModuleOp inputModule) {
+    // inputModule is empty
     if (!inputModule) {
         return true;
+    }
+
+    WriteImplOptions opts;
+    if (!parseOptions(args, opts)) {
+        log("[write_mlir]: parse options failed\n\n");
+        return false;
     }
 
     std::optional<std::unique_ptr<llvm::ToolOutputFile>> outputFile;
     std::string errorMessage;
     outputFile.emplace(mlir::openOutputFile(opts.outputFilename, &errorMessage));
     if (!outputFile.value()) {
-        llvm::errs() << errorMessage << "\n";
+        log("[write_mlir]: open output file failed[%s]\n\n", errorMessage.c_str());
         return false;
     }
 

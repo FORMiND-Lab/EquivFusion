@@ -11,8 +11,11 @@
 
 XUANSONG_NAMESPACE_HEADER_START
 
-bool WriteAIGERImpl::run(const std::vector<std::string>& args, mlir::MLIRContext &context,
-                         mlir::ModuleOp inputModule, mlir::OwningOpRef<mlir::ModuleOp>& outputModule) {
+bool WriteAIGERImpl::run(const std::vector<std::string>& args, mlir::MLIRContext &context, mlir::ModuleOp inputModule) {
+    if (!inputModule) {
+        return true;
+    }    
+
     WriteImplOptions opts;
     if (!parseOptions(args, opts)) {
         log("[write_aiger]: parser options failed\n\n");
@@ -23,7 +26,7 @@ bool WriteAIGERImpl::run(const std::vector<std::string>& args, mlir::MLIRContext
     std::string errorMessage;
     outputFile.emplace(mlir::openOutputFile(opts.outputFilename, &errorMessage));
     if (!outputFile.value()) {
-        llvm::errs() << errorMessage << "\n";
+        log("[write_aiger]: open output file failed[%s]\n\n", errorMessage.c_str());
         return false;
     }
 

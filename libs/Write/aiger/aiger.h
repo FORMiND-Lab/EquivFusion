@@ -7,8 +7,7 @@ XUANSONG_NAMESPACE_HEADER_START
 
 class WriteAIGERImpl final : public WriteBase {
 public:
-    static bool run(const std::vector<std::string>& args, mlir::MLIRContext& context,
-                    mlir::ModuleOp inputModule, mlir::OwningOpRef<mlir::ModuleOp>& outputModule);
+    static bool run(const std::vector<std::string>& args, mlir::MLIRContext& context, mlir::ModuleOp inputModule);
 
 private:
     WriteAIGERImpl() = default;
