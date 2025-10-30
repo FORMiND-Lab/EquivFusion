@@ -1,16 +1,17 @@
 #include "infrastructure/base/commandManager.h"
 
-#include "libs/Frontend/read_mlir.h"
-
-#include "libs/Tools/EquivMiter/equiv_miter.h"
+#include "libs/Backend/aiger/aiger.h"
+#include "libs/Backend/btor2/btor2.h"
+#include "libs/Backend/mlir/mlir.h"
+#include "libs/Backend/smt/smt.h"
 
 XUANSONG_NAMESPACE_HEADER_START
 
 template<typename Impl>
-struct GenericCommand : public Command {
+struct BackendCommand : public Command {
 public:
-    GenericCommand(const std::string& name, const std::string& description) : Command(name, description) {}
-    ~GenericCommand() override = default;
+    BackendCommand(const std::string& name, const std::string& description) : Command(name, description) {}
+    ~BackendCommand() override = default;
 
     void preExecute() override {
     }
@@ -32,10 +33,10 @@ public:
     }
 };
 
-GenericCommand<ReadMLIRImpl>    readMLIRCmd("read_mlir", "read mlir");
-
-GenericCommand<EquivMiterImpl>  equivMiterCmd("equiv_miter", "construct miter for logical equivalence check");
-
+BackendCommand<WriteSMTImpl>    writeSMTCmd("write_smt", "write smt");
+BackendCommand<WriteAIGERImpl>  writeAIGERCmd("write_aiger", "write aiger");
+BackendCommand<WriteBTOR2Impl>  writeBTOR2Cmd("write_btor2", "write btor2");
+BackendCommand<WriteMLIRImpl>   writeMLIRCmd("write_mlir",  "write mlir");
 
 XUANSONG_NAMESPACE_HEADER_END
 

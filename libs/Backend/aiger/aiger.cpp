@@ -1,4 +1,4 @@
-#include "libs/Backend/write_aiger.h"
+#include "libs/Backend/aiger/aiger.h"
 
 #include "circt/Dialect/HW/HWOps.h"
 
@@ -15,11 +15,11 @@
 
 XUANSONG_NAMESPACE_HEADER_START
 
-bool WriteAIGERImpl::run(const std::vector<std::string>& args,
-                         mlir::MLIRContext &context, mlir::ModuleOp inputModule,
-                         mlir::OwningOpRef<mlir::ModuleOp>& outputModule) {
+bool WriteAIGERImpl::run(const std::vector<std::string>& args, mlir::MLIRContext &context,
+                         mlir::ModuleOp inputModule, mlir::OwningOpRef<mlir::ModuleOp>& outputModule) {
     BackendImplOptions opts;
-    if (!parserOptions(args, opts)) {
+    if (!parseOptions(args, opts)) {
+        log("[write_aiger]: parser options failed\n\n");
         return false;
     }
 
@@ -37,15 +37,19 @@ bool WriteAIGERImpl::run(const std::vector<std::string>& args,
     pm.nest<circt::hw::HWModuleOp>().addPass(circt::createConvertCombToAIG());
     pm.nest<circt::hw::HWModuleOp>().addPass(circt::aig::createLowerVariadic());
 
-    if (failed(pm.run(inputModule)))
+    if (failed(pm.run(inputModule))) {
+        log("[write_aiger]: run PassManager failed\n\n");
         return false;
+    }
     
     auto ops = inputModule.getOps<circt::hw::HWModuleOp>();
     if (ops.empty() || std::next(ops.begin()) != ops.end())
         return false;
 
-    if (failed(circt::aiger::exportAIGER(*ops.begin(), outputFile.value()->os())))
+    if (failed(circt::aiger::exportAIGER(*ops.begin(), outputFile.value()->os()))) {
+        log("[write_aiger]: run exportAIGER failed\n\n");
         return false;
+    }
 
     outputFile.value()->keep();
     return true;

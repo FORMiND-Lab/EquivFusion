@@ -17,7 +17,7 @@ echo $input_files
 # Construct Miter and Export to AIGER
 equiv_fusion -p "read_mlir $input_files" \
              -p "equiv_miter --c1 "$name1" --c2 "$name2" --mitermode aiger" \
-             -p "write_aiger -o "$out_dir/miter.aiger""
+             -p "write_aiger "$out_dir/miter.aiger""
 
 # Convert aiger to cnf
 aigtocnf "$out_dir/miter.aiger" "$out_dir/miter.cnf"
