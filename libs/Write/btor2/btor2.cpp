@@ -1,10 +1,5 @@
 #include "libs/Write/btor2/btor2.h"
 
-#include "circt/Dialect/HW/HWDialect.h"
-
-#include "circt/Dialect/HW/HWPasses.h"              // createFlattenModules()               CIRCTHWTransforms
-#include "circt-passes/DecomposeConcat/Passes.h"    // createEquivFusionDecomposeConcat()    EquivFusionPassDecomposeConcat
-#include "circt/Dialect/Arc/ArcPasses.h"            // createSimplifyVariadicOpsPass()       CIRCTArcTransforms
 #include "circt/Conversion/HWToBTOR2.h"             // createConvertHWToBTOR2Pass()          CIRCTHWToBTOR2
 
 #include "mlir/Pass/PassManager.h"
@@ -31,12 +26,7 @@ bool WriteBTOR2Impl::run(const std::vector<std::string>& args, mlir::MLIRContext
     }
     
     mlir::PassManager pm(&context);
-    pm.addPass(circt::hw::createFlattenModules());
-    pm.addPass(circt::createEquivFusionDecomposeConcat());
-    pm.addPass(circt::arc::createSimplifyVariadicOpsPass());
-
     pm.addPass(circt::createConvertHWToBTOR2Pass(outputFile.value()->os()));
-    
     if (failed(pm.run(inputModule))) {
         log("[write_btor]: run PassManager failed\n\n");
         return false;

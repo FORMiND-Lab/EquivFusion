@@ -1,11 +1,5 @@
 #include "libs/Write/smt/smt.h"
 
-#include "mlir/Dialect/SMT/IR/SMTDialect.h"
-
-#include "circt/Conversion/HWToSMT.h"         // createConvertHWToSMT               CIRCTHWToSMT
-#include "circt/Conversion/CombToSMT.h"       // createConvertCombToSMT             CIRCTCombToSMT
-#include "circt/Conversion/VerifToSMT.h"      // createConvertVerifToSMT            CIRCTVerifToSMT
-#include "circt/Support/Passes.h"             // createSimpleCanonicalizerPass      CIRCTSupport
 #include "mlir/Target/SMTLIB/ExportSMTLIB.h"  // exportSMTLIB                       MLIRExportSMTLIB
 
 #include "mlir/Pass/PassManager.h"
@@ -30,18 +24,6 @@ bool WriteSMTImpl::run(const std::vector<std::string>& args, mlir::MLIRContext &
         llvm::errs() << errorMessage << "\n";
         return false;
     }
-
-    mlir::PassManager pm(&context);
-    pm.addPass(circt::createConvertHWToSMT());
-    pm.addPass(circt::createConvertCombToSMT());
-    pm.addPass(circt::createConvertVerifToSMT());
-    pm.addPass(circt::createSimpleCanonicalizerPass());
-
-    if (failed(pm.run(inputModule))) {
-        log("[write_smt]: PassManager run() failed\n\n");
-        return false;
-    }
-
     
     if (failed(mlir::smt::exportSMTLIB(inputModule, outputFile.value()->os()))) {
         log("write_smt]: exportSMTLIB failed\n\n");

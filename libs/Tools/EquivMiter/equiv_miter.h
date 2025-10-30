@@ -6,25 +6,35 @@
 #include "mlir/IR/MLIRContext.h"
 #include "mlir/IR/BuiltinOps.h"
 #include "mlir/IR/OwningOpRef.h"
+#include "mlir/Pass/PassManager.h"
+#include "mlir/Support/LogicalResult.h"
 
 #include "circt-passes/Miter/Passes.h"
 
 XUANSONG_NAMESPACE_HEADER_START
 
-struct EquivMiterImplOptions {
+struct EquivMiterToolOptions {
     std::string firstModuleName;
     std::string secondModuleName;
     std::vector<std::string> inputFilenames;
-    std::string outputFilename;
+    std::string outputFilename {"-"};
     circt::EquivFusionMiter::MiterModeEnum miterMode {circt::EquivFusionMiter::MiterModeEnum::SMTLIB};
 };
 
-class EquivMiterImpl {
+class EquivMiterTool {
 public:
-    EquivMiterImpl() = default;
+    EquivMiterTool() = default;
 
 private:
-    static bool parserOptions(const std::vector<std::string>& args, EquivMiterImplOptions& opts);
+    static bool parseOptions(const std::vector<std::string>& args, EquivMiterToolOptions& opts);
+
+private:
+    static llvm::LogicalResult miterToSMT(mlir::PassManager& pm, mlir::ModuleOp module, llvm::raw_ostream& os,
+                                          const circt::EquivFusionMiterOptions& miterOpts);
+    static llvm::LogicalResult miterToAIGER(mlir::PassManager& pm, mlir::ModuleOp module, llvm::raw_ostream& os,
+                                            const circt::EquivFusionMiterOptions& miterOpts);
+    static llvm::LogicalResult miterToBTOR2(mlir::PassManager& pm, mlir::ModuleOp module, llvm::raw_ostream& os,
+                                            const circt::EquivFusionMiterOptions& miterOpts);
 
 public:
     static void help(const std::string& name, const std::string& description);
