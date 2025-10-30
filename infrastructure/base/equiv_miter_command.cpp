@@ -1,15 +1,14 @@
 #include "infrastructure/base/equivfusionManager.h"
 #include "infrastructure/base/command.h"
 
-#include "libs/Read/read_mlir.h"
+#include "libs/Tools/EquivMiter/equiv_miter.h"
 
 XUANSONG_NAMESPACE_HEADER_START
 
-template<typename Impl>
-struct ReadCommand : public Command {
+struct EquivMiterCommand : public Command {
 public:
-    ReadCommand(const std::string& name, const std::string& description) : Command(name, description) {}
-    ~ReadCommand() = default;
+    EquivMiterCommand() : Command("equiv_miter", "construct miter for logical equivalence check") {}
+    ~EquivMiterCommand() = default;
 
     void preExecute() override {
     }
@@ -18,7 +17,7 @@ public:
         mlir::MLIRContext& context = *EquivFusionManager::getInstance()->getGlobalContext();
         mlir::ModuleOp inputModule = EquivFusionManager::getInstance()->getModuleOp();
         mlir::OwningOpRef<mlir::ModuleOp> outputModule;
-        if (Impl::run(args, context, inputModule, outputModule)) {
+        if (EquivMiterTool::run(args, context, inputModule, outputModule)) {
             EquivFusionManager::getInstance()->setModuleOp(outputModule);
         }
     }
@@ -27,11 +26,9 @@ public:
     }
 
     void help() override {
-        Impl::help(getName(), getDescription());
+        EquivMiterTool::help(getName(), getDescription());
     }
-};
-
-ReadCommand<ReadMLIRImpl>    readMLIRCmd("read_mlir", "read mlir");
+} equivMiterCmd;
 
 XUANSONG_NAMESPACE_HEADER_END
 

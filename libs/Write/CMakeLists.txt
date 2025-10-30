@@ -14,22 +14,10 @@ add_library(EquivFusionWrite
 
 target_link_libraries(EquivFusionWrite
     PRIVATE
-    CIRCTHW
-   
-    CIRCTHWTransforms
-    EquivFusionPassDecomposeConcat
-    CIRCTArcTransforms
-    CIRCTHWToBTOR2
-
-    CIRCTHWToSMT
-    CIRCTCombToSMT
-    CIRCTVerifToSMT
-    CIRCTSupport
+  
     MLIRExportSMTLIB
-
-    CIRCTCombToAIG
-    CIRCTAIGTransforms
-    CIRCTExportAIGER
+    CIRCTExportAIGER 
+    CIRCTHWToBTOR2
 
     log
 )
