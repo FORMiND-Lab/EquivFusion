@@ -17,13 +17,13 @@ struct BackendImplOptions {
 
 class BackendBase {
 public:
-    BackendBase() = default;
-
-public:
     static void help(const std::string& name, const std::string& description);
 
 protected:
-    static bool parserOptions(const std::vector<std::string>& args, BackendImplOptions& opts);
+    static bool parseOptions(const std::vector<std::string>& args, BackendImplOptions& opts);
+
+private:
+    BackendBase() = default;
 };
 
 
