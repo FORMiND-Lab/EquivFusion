@@ -1,3 +1,3 @@
 add_subdirectory(Tools)
-add_subdirectory(Frontend)
-add_subdirectory(Backend)
+add_subdirectory(Read)
+add_subdirectory(Write)

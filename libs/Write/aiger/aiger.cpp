@@ -1,4 +1,4 @@
-#include "libs/Backend/aiger/aiger.h"
+#include "libs/Write/aiger/aiger.h"
 
 #include "circt/Dialect/HW/HWOps.h"
 
@@ -17,7 +17,7 @@ XUANSONG_NAMESPACE_HEADER_START
 
 bool WriteAIGERImpl::run(const std::vector<std::string>& args, mlir::MLIRContext &context,
                          mlir::ModuleOp inputModule, mlir::OwningOpRef<mlir::ModuleOp>& outputModule) {
-    BackendImplOptions opts;
+    WriteImplOptions opts;
     if (!parseOptions(args, opts)) {
         log("[write_aiger]: parser options failed\n\n");
         return false;

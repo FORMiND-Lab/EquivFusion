@@ -1,5 +1,5 @@
-#ifndef EQUIVFUSION_FRONTEND_BASE_H
-#define EQUIVFUSION_FRONTEND_BASE_H
+#ifndef EQUIVFUSION_READ_BASE_H
+#define EQUIVFUSION_READ_BASE_H
 
 #include <vector>
 #include <string>
@@ -11,23 +11,23 @@
 
 XUANSONG_NAMESPACE_HEADER_START
 
-struct FrontendImplOptions {
+struct ReadImplOptions {
     std::vector<std::string> inputFilenames;
     std::string outputFilename;
 };
 
-class FrontendBase {
+class ReadBase {
 public:
-    FrontendBase() = default;
+    ReadBase() = default;
     static void help(const std::string& name, const std::string& description);
 
 protected:
-    static bool initOptions(const std::vector<std::string>& args, FrontendImplOptions &opts);
+    static bool initOptions(const std::vector<std::string>& args, ReadImplOptions &opts);
     static void mergeModules(mlir::ModuleOp dest, mlir::ModuleOp src);
 };
 
 
 XUANSONG_NAMESPACE_HEADER_END
 
-#endif // EQUIVFUSION_FRONTEND_BASE_H
+#endif // EQUIVFUSION_READ_BASE_H
 

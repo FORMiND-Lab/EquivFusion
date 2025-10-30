@@ -1,4 +1,4 @@
-#include "libs/Backend/smt/smt.h"
+#include "libs/Write/smt/smt.h"
 
 #include "mlir/Dialect/SMT/IR/SMTDialect.h"
 
@@ -17,7 +17,7 @@ XUANSONG_NAMESPACE_HEADER_START
 
 bool WriteSMTImpl::run(const std::vector<std::string>& args, mlir::MLIRContext &context,
                        mlir::ModuleOp inputModule, mlir::OwningOpRef<mlir::ModuleOp>& outputModule) {
-    BackendImplOptions opts;
+    WriteImplOptions opts;
     if (!parseOptions(args, opts)) {
         log("[write_smt]: parse options failed\n\n");
         return false;

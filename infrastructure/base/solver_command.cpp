@@ -7,7 +7,7 @@ XUANSONG_NAMESPACE_HEADER_START
 struct SolverCommand : public Command {
 public:
     SolverCommand() : Command("solver_runner", "run solver") {}
-    ~SolverCommand() override = default;
+    ~SolverCommand() = default;
 
     void preExecute() override {
     }

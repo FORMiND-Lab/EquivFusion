@@ -1,5 +1,5 @@
-#ifndef EQUIVFUSION_BACKEND_H
-#define EQUIVFUSION_BACKEND_H
+#ifndef EQUIVFUSION_WRITE_BASE_H
+#define EQUIVFUSION_WRITE_BASE_H
 
 #include <vector>
 #include <string>
@@ -11,22 +11,22 @@
 
 XUANSONG_NAMESPACE_HEADER_START
 
-struct BackendImplOptions {
+struct WriteImplOptions {
     std::string outputFilename {"-"};
 };
 
-class BackendBase {
+class WriteBase {
 public:
     static void help(const std::string& name, const std::string& description);
 
 protected:
-    static bool parseOptions(const std::vector<std::string>& args, BackendImplOptions& opts);
+    static bool parseOptions(const std::vector<std::string>& args, WriteImplOptions& opts);
 
 private:
-    BackendBase() = default;
+    WriteBase() = default;
 };
 
 
 XUANSONG_NAMESPACE_HEADER_END
 
-#endif // EQUIVFUSION_BACKEND_H
+#endif // EQUIVFUSION_WRITE_BASE_H

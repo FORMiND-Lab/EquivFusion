@@ -1,8 +1,8 @@
-#include "libs/Frontend/frontend_base.h"
+#include "libs/Read/read_base.h"
 
 XUANSONG_NAMESPACE_HEADER_START
 
-void FrontendBase::help(const std::string& name, const std::string& description) {
+void ReadBase::help(const std::string& name, const std::string& description) {
     log("\n");
     log("   overview: %s - %s\n", name.c_str(), description.c_str());
     log("   usage:    %s [-o filename]\n", name.c_str());
@@ -13,7 +13,7 @@ void FrontendBase::help(const std::string& name, const std::string& description)
     log("\n\n");
 }
 
-bool FrontendBase::initOptions(const std::vector<std::string>& args, FrontendImplOptions& opts) {
+bool ReadBase::initOptions(const std::vector<std::string>& args, ReadImplOptions& opts) {
     for (size_t idx = 0; idx < args.size(); idx++) {
         auto argv = args[idx];
         if (argv == "-o" && idx + 1 < args.size()) {
@@ -25,7 +25,7 @@ bool FrontendBase::initOptions(const std::vector<std::string>& args, FrontendImp
     return true;
 }
 
-void FrontendBase::mergeModules(mlir::ModuleOp dest, mlir::ModuleOp src) {
+void ReadBase::mergeModules(mlir::ModuleOp dest, mlir::ModuleOp src) {
     dest.getBody()->getOperations().splice(dest.getBody()->begin(),
                                            src.getBody()->getOperations());
 }

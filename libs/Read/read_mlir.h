@@ -1,11 +1,11 @@
 #ifndef EQUIVFUSION_READ_MLIR_H
 #define EQUIVFUSION_READ_MLIR_H
 
-#include "libs/Frontend/frontend_base.h"
+#include "libs/Read/read_base.h"
 
 XUANSONG_NAMESPACE_HEADER_START
 
-class ReadMLIRImpl : public FrontendBase {
+class ReadMLIRImpl : public ReadBase {
 public:
     ReadMLIRImpl() = default;
 

@@ -9,7 +9,7 @@ XUANSONG_NAMESPACE_HEADER_START
 struct HistoryCmd : public Command {
 public: 
     HistoryCmd() : Command("history", "show last interactive commands") {}
-    ~HistoryCmd() override = default;
+    ~HistoryCmd() = default;
 
     HistoryCmd(const HistoryCmd &) = delete;
     HistoryCmd &operator=(const HistoryCmd &) = delete;

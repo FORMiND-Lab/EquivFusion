@@ -14,8 +14,8 @@ target_link_libraries(base
 
     EquivFusionSolverRunner
     EquivFusionToolEquivMiter
-    EquivFusionBackend
-    EquivFusionFrontend    
+    EquivFusionWrite
+    EquivFusionRead    
 )
 
 llvm_update_compile_flags(base)
