@@ -34,7 +34,8 @@ bool WriteAIGERImpl::run(const std::vector<std::string>& args, mlir::MLIRContext
     if (ops.empty() || std::next(ops.begin()) != ops.end())
         return false;
 
-    if (failed(circt::aiger::exportAIGER(*ops.begin(), outputFile.value()->os()))) {
+    circt::aiger::ExportAIGEROptions exportAIGEROpts = {true, true};
+    if (failed(circt::aiger::exportAIGER(*ops.begin(), outputFile.value()->os(), &exportAIGEROpts))) {
         log("[write_aiger]: run exportAIGER failed\n\n");
         return false;
     }

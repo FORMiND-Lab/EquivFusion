@@ -1,4 +1,5 @@
 #include "infrastructure/log/log.h"
+#include "infrastructure/utils/path/path.h"
 #include "libs/Tools/EquivMiter/equiv_miter.h"
 
 #include "circt/Dialect/HW/HWOps.h"
@@ -106,7 +107,8 @@ llvm::LogicalResult EquivMiterTool::miterToAIGER(mlir::PassManager& pm, mlir::Mo
     if (ops.empty() || std::next(ops.begin()) != ops.end())
         return failure();
 
-    return aiger::exportAIGER(*ops.begin(), os);
+    circt::aiger::ExportAIGEROptions exportAIGEROpts = {true, true};
+    return aiger::exportAIGER(*ops.begin(), os, &exportAIGEROpts);
 }
 
 LogicalResult EquivMiterTool::miterToBTOR2(mlir::PassManager& pm, mlir::ModuleOp module, llvm::raw_ostream& os,
@@ -131,6 +133,7 @@ bool EquivMiterTool::parseOptions(const std::vector<std::string> &args, EquivMit
             opts.secondModuleName = args[++idx];
         } else if (arg == "-o" && idx + 1 < args.size()) {
             opts.outputFilename = args[++idx];
+            PathUtil::expandTilde(opts.outputFilename);
         } else if (arg == "-mitermode" && idx + 1 < args.size()) {
             auto val = args[++idx];
             if (val == "aiger") {
