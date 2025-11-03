@@ -1,3 +1,4 @@
+#include "infrastructure/utils/path/path.h"
 #include "libs/Write/base/base.h"
 
 XUANSONG_NAMESPACE_HEADER_START
@@ -14,6 +15,7 @@ bool WriteBase::parseOptions(const std::vector<std::string>& args, WriteImplOpti
     for (size_t idx = 0; idx < args.size(); idx++) {
         auto arg = args[idx];
         opts.outputFilename = arg;
+        PathUtil::expandTilde(opts.outputFilename);
     }
     return true;
 }

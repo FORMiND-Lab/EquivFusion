@@ -21,7 +21,7 @@ target_link_libraries(EquivFusionToolEquivMiter
     CIRCTArcTransforms
     CIRCTHWToBTOR2    
 
-    log
+    utils
 )
 
 llvm_update_compile_flags(EquivFusionToolEquivMiter)
