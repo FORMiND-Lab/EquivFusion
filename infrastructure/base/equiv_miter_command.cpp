@@ -1,5 +1,6 @@
-#include "infrastructure/base/equivfusionManager.h"
+#include "infrastructure/managers/equivfusion_manager/equivfusionManager.h"
 #include "infrastructure/base/command.h"
+#include "infrastructure/log/log.h"
 
 #include "libs/Tools/EquivMiter/equiv_miter.h"
 
@@ -14,11 +15,8 @@ public:
     }
 
     void execute(const std::vector<std::string>& args) override {
-        mlir::MLIRContext& context = *EquivFusionManager::getInstance()->getGlobalContext();
-        mlir::ModuleOp inputModule = EquivFusionManager::getInstance()->getModuleOp();
-        mlir::OwningOpRef<mlir::ModuleOp> outputModule;
-        if (EquivMiterTool::run(args, context, inputModule, outputModule)) {
-            EquivFusionManager::getInstance()->setModuleOp(outputModule);
+        if (!EquivMiterTool::run(args)) {
+            logError("Command 'equiv_miter' failed!\n");
         }
     }
 

@@ -1,4 +1,4 @@
-#include "infrastructure/base/equivfusionManager.h"
+#include "infrastructure/managers/equivfusion_manager/equivfusionManager.h"
 #include "infrastructure/base/command.h"
 #include "libs/Write/aiger/aiger.h"
 #include "libs/Write/btor2/btor2.h"
@@ -18,7 +18,7 @@ public:
 
     void execute(const std::vector<std::string>& args) override {
         mlir::MLIRContext& context = *EquivFusionManager::getInstance()->getGlobalContext();
-        mlir::ModuleOp inputModule = EquivFusionManager::getInstance()->getModuleOp();
+        mlir::ModuleOp inputModule = EquivFusionManager::getInstance()->getMergedModuleOp();
         Impl::run(args, context, inputModule);
     }
 

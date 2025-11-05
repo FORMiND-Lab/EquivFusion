@@ -11,11 +11,44 @@ target_link_libraries(base
     log
 
     MLIRFuncInlinerExtension
+    MLIRArithDialect
+    MLIRControlFlowDialect
+    MLIRSCFDialect
+    MLIRMemRefDialect
+    MLIRAffineDialect
+    MLIRSupport
+    MLIRParser
+    MLIRIR
+    MLIRLLVMDialect
+    MLIROptLib
+    MLIRTransforms
+    MLIRSCFToControlFlow
+    MLIRAffineToStandard
+
+    LLVMSupport
+
+    CIRCTHW
+    CIRCTHWTransforms
+    CIRCTSeq
+    CIRCTSeqTransforms
+    CIRCTTransforms
+    CIRCTImportVerilog
+    CIRCTComb
+    CIRCTLLHD
+    CIRCTLLHDTransforms
+    CIRCTMoore
+    CIRCTMooreToCore
+    CIRCTMooreTransforms
+    CIRCTSupport
+    CIRCTVerif
 
     EquivFusionSolverRunner
     EquivFusionToolEquivMiter
-    EquivFusionWrite
-    EquivFusionRead    
+    EquivFusionWrite 
+    FuncToHWModule
+    EquivFusionRemoveRedundantFunc
+    EquivFusionConvertCaseToLogicalComparison
+    EquivFusionManager
 )
 
 llvm_update_compile_flags(base)

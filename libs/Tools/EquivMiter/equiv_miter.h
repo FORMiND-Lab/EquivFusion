@@ -13,9 +13,14 @@
 
 XUANSONG_NAMESPACE_HEADER_START
 
+enum struct DesignTypeEnum {
+    SPEC,
+    IMPL,
+};
+
 struct EquivMiterToolOptions {
-    std::string firstModuleName;
-    std::string secondModuleName;
+    std::string specModuleName;
+    std::string implModuleName;
     std::vector<std::string> inputFilenames;
     std::string outputFilename {"-"};
     circt::EquivFusionMiter::MiterModeEnum miterMode {circt::EquivFusionMiter::MiterModeEnum::SMTLIB};
@@ -27,6 +32,7 @@ public:
 
 private:
     static bool parseOptions(const std::vector<std::string>& args, EquivMiterToolOptions& opts);
+    static bool mergeModules(mlir::ModuleOp dest, mlir::ModuleOp src, EquivMiterToolOptions& opts, DesignTypeEnum designType);
 
 private:
     static llvm::LogicalResult miterToSMT(mlir::PassManager& pm, mlir::ModuleOp module, llvm::raw_ostream& os,
@@ -39,9 +45,7 @@ private:
 public:
     static void help(const std::string& name, const std::string& description);
 
-    static bool run(const std::vector<std::string>& args,
-                    mlir::MLIRContext &context, mlir::ModuleOp inputModule, 
-                    mlir::OwningOpRef<mlir::ModuleOp>& outputModule);
+    static bool run(const std::vector<std::string>& args);
 };
 
 XUANSONG_NAMESPACE_HEADER_END // namespace XuanSong

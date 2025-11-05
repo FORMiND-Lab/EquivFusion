@@ -12,12 +12,14 @@ target_link_libraries(EquivFusionToolEquivMiter
     CIRCTVerifToSMT
     CIRCTSupport
     MLIRExportSMTLIB
+    MLIRIR
 
-    CIRCTCombToAIG
-    CIRCTAIGTransforms
+    CIRCTCombToSynth
+    CIRCTSynthTransforms
     CIRCTExportAIGER
     
     EquivFusionPassDecomposeConcat
+    EquivFusionManager
     CIRCTArcTransforms
     CIRCTHWToBTOR2    
 
