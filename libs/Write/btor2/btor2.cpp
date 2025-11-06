@@ -1,7 +1,12 @@
+#include "infrastructure/managers/equivfusion_manager/equivfusion_manager.h"
+#include "infrastructure/utils/log/log.h"
+
 #include "libs/Write/btor2/btor2.h"
 
 #include "circt/Conversion/HWToBTOR2.h"             // createConvertHWToBTOR2Pass()          CIRCTHWToBTOR2
 
+#include "mlir/IR/BuiltinOps.h"
+#include "mlir/IR/MLIRContext.h"
 #include "mlir/Pass/PassManager.h"
 #include "mlir/Support/LogicalResult.h"
 #include "mlir/Support/FileUtilities.h"
@@ -9,17 +14,21 @@
 
 XUANSONG_NAMESPACE_HEADER_START
 
-bool WriteBTOR2Impl::run(const std::vector<std::string>& args, mlir::MLIRContext &context, mlir::ModuleOp inputModule) {
-    if (!inputModule) {
-        return true;
-    }
-
+bool WriteBTOR2Impl::run(const std::vector<std::string>& args) {
+    // Parse Options
     WriteImplOptions opts;
     if (!parseOptions(args, opts)) {
         log("[write_btor2]: parser options failed\n\n");
         return false;
     }
 
+    // Check module
+    mlir::ModuleOp module = EquivFusionManager::getInstance()->getMergedModuleOp();
+    if (!module) {
+        return true;
+    }
+
+    // Open output file
     std::optional<std::unique_ptr<llvm::ToolOutputFile>> outputFile;
     std::string errorMessage;
     outputFile.emplace(mlir::openOutputFile(opts.outputFilename, &errorMessage));
@@ -27,8 +36,10 @@ bool WriteBTOR2Impl::run(const std::vector<std::string>& args, mlir::MLIRContext
         log("[write_btor2]: open output file failed[%s]\n\n", errorMessage.c_str());
         return false;
     }
-    
-    mlir::PassManager pm(&context);
+
+    // Print btor2 to output file
+    MLIRContext *context = EquivFusionManager::getInstance()->getGlobalContext();
+    mlir::PassManager pm(context);
     pm.addPass(circt::createConvertHWToBTOR2Pass(outputFile.value()->os()));
     if (failed(pm.run(inputModule))) {
         log("[write_btor2]: run PassManager failed\n\n");

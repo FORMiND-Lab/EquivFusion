@@ -1,18 +1,12 @@
-aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR} SRC_FILES)
-aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/path PATH_UTIL_FILES)
+aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/log LOG_FILES)
+aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/path PATH_FILES)
+aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/string STRING_FILES)
 
-add_library(utils STATIC
-    ${SRC_FILES}
-    ${PATH_UTIL_FILES}
+add_library(EquivFusionUtils STATIC
+    ${LOG_FILES}
+    ${PATH_FILES}
+    ${STRING_FILES}
 )
 
-target_include_directories(utils PRIVATE ${INCLUDE_DIRS})
-target_include_directories(utils PRIVATE ${READLINE_INCLUDE_DIRECTORY})
-
-target_link_libraries(utils
-    PUBLIC
-    ${READLINE_LIBRARY}
-    log                         # 显式链接log库
-)
 
 

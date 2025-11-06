@@ -1,7 +1,7 @@
 #include "infrastructure/base/command.h"
 #include "infrastructure/managers/equivfusion_manager/equivfusionManager.h"
 #include "infrastructure/utils/namespace_macro.h"
-#include "infrastructure/log/log.h"
+#include "infrastructure/utils/log/log.h"
 
 #include "llvm/Support/LogicalResult.h"
 #include "llvm/Support/MemoryBuffer.h"

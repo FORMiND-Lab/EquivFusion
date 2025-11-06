@@ -1,6 +1,7 @@
 #include "infrastructure/utils/path/path.h"
 
 namespace XuanSong {
+namespace Utils {
 namespace PathUtil {
 
 void expandTilde(std::string& path) {
@@ -9,4 +10,5 @@ void expandTilde(std::string& path) {
 }
 
 } // namespace PathUtil
+} // namespace Utils
 } // namespace XuanSong

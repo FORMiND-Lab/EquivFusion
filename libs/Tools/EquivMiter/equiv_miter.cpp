@@ -1,4 +1,4 @@
-#include "infrastructure/log/log.h"
+#include "infrastructure/utils/log/log.h"
 #include "infrastructure/utils/path/path.h"
 #include "libs/Tools/EquivMiter/equiv_miter.h"
 #include "infrastructure/managers/equivfusion_manager/equivfusionManager.h"
@@ -99,7 +99,8 @@ bool EquivMiterTool::run(const std::vector<std::string>& args) {
     MLIRContext *context = EquivFusionManager::getInstance()->getGlobalContext();
     OwningOpRef<ModuleOp> module = ModuleOp::create(UnknownLoc::get(context));
     ModuleOp specModule = EquivFusionManager::getInstance()->getSpecModuleOp();
-    ModuleOp implModule = EquivFusionManager::getInstance()->getImplModuleOp();
+
+
 
     if (!specModule) {
         log("[equiv_miter]: Specification not specified, please use 'read_c' or 'read_v' to read the specification before 'equiv_miter'.\n");
@@ -170,7 +171,7 @@ llvm::LogicalResult EquivMiterTool::miterToSMT(mlir::PassManager& pm, mlir::Modu
 llvm::LogicalResult EquivMiterTool::miterToAIGER(mlir::PassManager& pm, mlir::ModuleOp module, llvm::raw_ostream& os,
                                                  const EquivFusionMiterOptions& miterOpts) {
     pm.addPass(createEquivFusionMiter(miterOpts));
-    
+
     pm.addPass(hw::createFlattenModules());
     pm.addPass(createSimpleCanonicalizerPass());
 
@@ -211,7 +212,7 @@ bool EquivMiterTool::parseOptions(const std::vector<std::string> &args, EquivMit
             opts.implModuleName = args[++idx];
         } else if (arg == "-o" && idx + 1 < args.size()) {
             opts.outputFilename = args[++idx];
-            PathUtil::expandTilde(opts.outputFilename);
+            Utils::PathUtil::expandTilde(opts.outputFilename);
         } else if (arg == "-mitermode" && idx + 1 < args.size()) {
             auto val = args[++idx];
             if (val == "aiger") {
@@ -240,10 +241,10 @@ void EquivMiterTool::help(const std::string& name, const std::string& descriptio
     log("   OVERVIEW: %s - %s\n", name.c_str(), description.c_str());;
     log("   USAGE:    %s <-specModule name> <-implModule name> [options]\n", name.c_str());
     log("   OPTIONS:\n");
-    log("       -specModule <module name>      - Specify a named module for the specification circuit\n");
-    log("       -implModule <module name>      - Specify a named module for the implementation circuit\n");
-    log("       -mitermode             - MiterMode [smtlib, aiger, btor2], default is smtlib\n");
-    log("       -o                     - Output filename\n");
+    log("       -specModule <module name> -------------- Specify a named module for the specification circuit\n");
+    log("       -implModule <module name> -------------- Specify a named module for the implementation circuit\n");
+    log("       -mitermode ----------------------------- MiterMode [smtlib, aiger, btor2], default is smtlib\n");
+    log("       -o ------------------------------------- Output filename\n");
     log("   Example:");
     log("       equiv_miter -specModule specModuleName -implModule implModuleName");
     log("\n\n");

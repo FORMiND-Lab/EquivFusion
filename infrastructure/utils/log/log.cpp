@@ -1,6 +1,6 @@
 #include <iostream>
 #include <cstdlib>
-#include "infrastructure/log/log.h"
+#include "infrastructure/utils/log/log.h"
 
 XUANSONG_NAMESPACE_HEADER_START
 

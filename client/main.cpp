@@ -1,8 +1,8 @@
 #include <iostream>
-#include "infrastructure/base/commandManager.h"
-#include "infrastructure/utils/common_functions.h"
-#include "infrastructure/log/log.h"
 #include "libs/cxxopts/cxxopts.hpp"
+#include "infrastructure/utils/log/log.h"
+#include "infrastructure/base/commandManager.h"
+#include "infrastructure/kernal/run_command.h"
 
 int main(int argc, char** argv) { 
     bool run_shell = true;

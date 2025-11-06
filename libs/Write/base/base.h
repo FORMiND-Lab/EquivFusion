@@ -4,10 +4,7 @@
 #include <vector>
 #include <string>
 #include "infrastructure/utils/namespace_macro.h"
-#include "infrastructure/log/log.h"
 
-#include "mlir/IR/BuiltinOps.h"
-#include "mlir/IR/MLIRContext.h"
 
 XUANSONG_NAMESPACE_HEADER_START
 
