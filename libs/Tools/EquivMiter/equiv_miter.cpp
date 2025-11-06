@@ -99,7 +99,7 @@ bool EquivMiterTool::run(const std::vector<std::string>& args) {
     MLIRContext *context = EquivFusionManager::getInstance()->getGlobalContext();
     OwningOpRef<ModuleOp> module = ModuleOp::create(UnknownLoc::get(context));
     ModuleOp specModule = EquivFusionManager::getInstance()->getSpecModuleOp();
-
+    ModuleOp implModule = EquivFusionManager::getInstance()->getImplModuleOp();
 
 
     if (!specModule) {

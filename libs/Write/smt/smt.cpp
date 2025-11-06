@@ -1,5 +1,5 @@
-#include "infrastructure/managers/equivfusion_manager/equivfusion_manager.h"
 #include "infrastructure/utils/log/log.h"
+#include "infrastructure/managers/equivfusion_manager/equivfusionManager.h"
 
 #include "libs/Write/smt/smt.h"
 

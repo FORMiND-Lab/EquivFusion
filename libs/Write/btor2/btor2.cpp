@@ -1,5 +1,5 @@
-#include "infrastructure/managers/equivfusion_manager/equivfusion_manager.h"
 #include "infrastructure/utils/log/log.h"
+#include "infrastructure/managers/equivfusion_manager/equivfusionManager.h"
 
 #include "libs/Write/btor2/btor2.h"
 
@@ -38,10 +38,10 @@ bool WriteBTOR2Impl::run(const std::vector<std::string>& args) {
     }
 
     // Print btor2 to output file
-    MLIRContext *context = EquivFusionManager::getInstance()->getGlobalContext();
+    mlir::MLIRContext *context = EquivFusionManager::getInstance()->getGlobalContext();
     mlir::PassManager pm(context);
     pm.addPass(circt::createConvertHWToBTOR2Pass(outputFile.value()->os()));
-    if (failed(pm.run(inputModule))) {
+    if (failed(pm.run(module))) {
         log("[write_btor2]: run PassManager failed\n\n");
         return false;
     }

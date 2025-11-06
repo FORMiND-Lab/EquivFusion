@@ -5,8 +5,7 @@
 #include "infrastructure/base/commandManager.h"
 #include "infrastructure/utils/log/log.h"
 #include "infrastructure/utils/string/string.h"
-#include "infrastructure/kernal/run_command.h"
-#include "infrastructure/utils/common_functions.h"
+#include "infrastructure/kernel/run_command.h"
 
 XUANSONG_NAMESPACE_HEADER_START
 

@@ -2,7 +2,7 @@
 #include "libs/cxxopts/cxxopts.hpp"
 #include "infrastructure/utils/log/log.h"
 #include "infrastructure/base/commandManager.h"
-#include "infrastructure/kernal/run_command.h"
+#include "infrastructure/kernel/run_command.h"
 
 int main(int argc, char** argv) { 
     bool run_shell = true;

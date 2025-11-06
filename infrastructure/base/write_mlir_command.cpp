@@ -1,6 +1,6 @@
 #include "infrastructure/utils/log/log.h"
 #include "infrastructure/utils/path/path.h"
-#include "infrastructure/managers/equivfusion_manager/equivfusion_manager.h"
+#include "infrastructure/managers/equivfusion_manager/equivfusionManager.h"
 #include "infrastructure/base/command.h"
 
 #include "mlir/IR/BuiltinOps.h"
@@ -50,10 +50,10 @@ public:
     void help() override {
         log("\n");
         log("   OVERVIEW: %s - %s\n", getName().c_str(), getDescription().c_str());
-        log("   USAGE:    %s [--module spec | impl | miter] <outputfile>\n", name.c_str());
+        log("   USAGE:    %s [--module spec | impl | miter] <outputfile>\n", getName().c_str());
         log("   OPTIONS:\n");
         log("       --module ------------------------------------ Write module [spec, impl, miter]. \n");
-        log("   Example:  %s test.output", name.c_str());
+        log("   Example:  %s test.output", getName().c_str());
         log("\n\n");
     }
 
@@ -65,7 +65,7 @@ private:
 
 
 /// Parse options to WriteMLIROptions
-void WriteMLIRCommand::parseOptions(const std::vector<std::string>& args, WriteMLIROptions& opts) {
+bool WriteMLIRCommand::parseOptions(const std::vector<std::string>& args, WriteMLIROptions& opts) {
     for (size_t idx = 0; idx < args.size(); idx++) {
         auto arg = args[idx];
         if ((arg == "--module" || arg == "-module") && idx + 1 < args.size()) {
@@ -75,9 +75,10 @@ void WriteMLIRCommand::parseOptions(const std::vector<std::string>& args, WriteM
             } else if (val == "impl") {
                 opts.module = WriteMLIROptions::ModuleEnum::IMPL;
             } else if (val == "miter") {
-                opts.module = WriteMLIROptions::ModuleEnum::Miter;
+                opts.module = WriteMLIROptions::ModuleEnum::MITER;
             } else {
                 log("Wrong options val of -mode.\n");
+                return false;
             }
         } else {
             opts.outputFilename = arg;
