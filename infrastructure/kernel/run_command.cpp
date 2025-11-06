@@ -3,26 +3,11 @@
 #include <readline/readline.h>
 #include <readline/history.h>
 #include "infrastructure/base/commandManager.h"
-#include "infrastructure/log/log.h"
-#include "infrastructure/utils/common_functions.h"
+#include "infrastructure/utils/log/log.h"
+#include "infrastructure/utils/string/string.h"
+#include "infrastructure/kernel/run_command.h"
 
 XUANSONG_NAMESPACE_HEADER_START
-
-std::string nextToken(std::string &text, std::string sep) {
-    size_t beginPos = text.find_first_not_of(sep);
-    if (beginPos == std::string::npos) {
-        return "";
-    }
-
-    size_t endPos = text.find_first_of(sep, beginPos);
-    if (endPos == std::string::npos) {
-        endPos = text.size();
-    }
-
-    std::string token = text.substr(beginPos, endPos - beginPos);
-    text = text.substr(endPos);
-    return token;
-}
 
 static char *readline_cmd_generator(const char *text, int state)
 {
@@ -54,13 +39,13 @@ static char **readline_completion (const char *text, int start, int) {
 void runCommand(std::string commandStr) {  
     add_history(commandStr.c_str());
 
-    std::string commandName = nextToken(commandStr, " \t\n\r");
-    std::string token = nextToken(commandStr, " \t\n\r");
+    std::string commandName = Utils::StringUtil::nextToken(commandStr, " \t\n\r");
+    std::string token = Utils::StringUtil::nextToken(commandStr, " \t\n\r");
     std::vector<std::string> args;
     
     while (!token.empty()) {
         args.push_back(token);
-        token = nextToken(commandStr, " \t\n\r");
+        token = Utils::StringUtil::nextToken(commandStr, " \t\n\r");
     }
 
     CommandManager *commandMgr = CommandManager::getInstance();

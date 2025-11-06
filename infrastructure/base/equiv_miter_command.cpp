@@ -1,6 +1,6 @@
 #include "infrastructure/managers/equivfusion_manager/equivfusionManager.h"
 #include "infrastructure/base/command.h"
-#include "infrastructure/log/log.h"
+#include "infrastructure/utils/log/log.h"
 
 #include "libs/Tools/EquivMiter/equiv_miter.h"
 

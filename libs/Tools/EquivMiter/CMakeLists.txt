@@ -19,11 +19,11 @@ target_link_libraries(EquivFusionToolEquivMiter
     CIRCTExportAIGER
     
     EquivFusionPassDecomposeConcat
-    EquivFusionManager
     CIRCTArcTransforms
-    CIRCTHWToBTOR2    
+    CIRCTHWToBTOR2
 
-    utils
+    EquivFusionManager
+    EquivFusionUtils
 )
 
 llvm_update_compile_flags(EquivFusionToolEquivMiter)

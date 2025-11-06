@@ -24,7 +24,6 @@ target_link_libraries(equivfusion-hls
 
   FuncToHWModule
   EquivFusionRemoveRedundantFunc
-  log
 )
 
 target_include_directories(equivfusion-hls PUBLIC ${INCLUDE_DIRS})

@@ -8,7 +8,6 @@ target_include_directories(base PRIVATE ${READLINE_INCLUDE_DIRECTORY})
 target_link_libraries(base
     PUBLIC
     ${READLINE_LIBRARY}
-    log
 
     MLIRFuncInlinerExtension
     MLIRArithDialect
@@ -48,7 +47,9 @@ target_link_libraries(base
     FuncToHWModule
     EquivFusionRemoveRedundantFunc
     EquivFusionConvertCaseToLogicalComparison
+
     EquivFusionManager
+    EquivFusionUtils
 )
 
 llvm_update_compile_flags(base)

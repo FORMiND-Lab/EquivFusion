@@ -2,7 +2,6 @@
 #include "infrastructure/base/command.h"
 #include "libs/Write/aiger/aiger.h"
 #include "libs/Write/btor2/btor2.h"
-#include "libs/Write/mlir/mlir.h"
 #include "libs/Write/smt/smt.h"
 
 XUANSONG_NAMESPACE_HEADER_START
@@ -17,9 +16,7 @@ public:
     }
 
     void execute(const std::vector<std::string>& args) override {
-        mlir::MLIRContext& context = *EquivFusionManager::getInstance()->getGlobalContext();
-        mlir::ModuleOp inputModule = EquivFusionManager::getInstance()->getMergedModuleOp();
-        Impl::run(args, context, inputModule);
+        Impl::run(args);
     }
 
     void postExecute() override {
@@ -33,7 +30,6 @@ public:
 WriteCommand<WriteSMTImpl>    writeSMTCmd("write_smt", "write smt");
 WriteCommand<WriteAIGERImpl>  writeAIGERCmd("write_aiger", "write aiger");
 WriteCommand<WriteBTOR2Impl>  writeBTOR2Cmd("write_btor2", "write btor2");
-WriteCommand<WriteMLIRImpl>   writeMLIRCmd("write_mlir",  "write mlir");
 
 XUANSONG_NAMESPACE_HEADER_END
 

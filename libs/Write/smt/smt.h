@@ -7,7 +7,7 @@ XUANSONG_NAMESPACE_HEADER_START
 
 class WriteSMTImpl final : public WriteBase {
 public:
-    static bool run(const std::vector<std::string>& args, mlir::MLIRContext& context, mlir::ModuleOp inputModule);
+    static bool run(const std::vector<std::string>& args);
 
 private:
     WriteSMTImpl() = default;

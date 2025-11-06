@@ -19,6 +19,6 @@ target_link_libraries(EquivFusionWrite
     CIRCTExportAIGER 
     CIRCTHWToBTOR2
 
-    utils
+    EquivFusionUtils
 )
 

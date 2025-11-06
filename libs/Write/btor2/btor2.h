@@ -7,7 +7,7 @@ XUANSONG_NAMESPACE_HEADER_START
 
 class WriteBTOR2Impl final: public WriteBase {
 public:
-    static bool run(const std::vector<std::string>&args, mlir::MLIRContext& context, mlir::ModuleOp inputModule);
+    static bool run(const std::vector<std::string>&args);
 
 private:
     WriteBTOR2Impl() = default;
