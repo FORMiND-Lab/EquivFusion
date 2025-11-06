@@ -4,5 +4,5 @@ add_executable(equiv_fusion ${SRC_FILES})
 target_include_directories(equiv_fusion PRIVATE ${INCLUDE_DIRS})
 target_link_libraries(equiv_fusion
     PUBLIC
-    EquivFusionKernal
+    EquivFusionKernel
 )

@@ -1,4 +1,4 @@
-#include "infrastructure/utils/log/log.h"
+#include "infrastructure/utils/log-util/log_util.h"
 #include "infrastructure/managers/equivfusion_manager/equivfusionManager.h"
 
 #include "libs/Write/aiger/aiger.h"
