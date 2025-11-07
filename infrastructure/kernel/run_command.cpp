@@ -3,8 +3,8 @@
 #include <readline/readline.h>
 #include <readline/history.h>
 #include "infrastructure/base/commandManager.h"
-#include "infrastructure/utils/log/log.h"
-#include "infrastructure/utils/string/string.h"
+#include "infrastructure/utils/log-util/log_util.h"
+#include "infrastructure/utils/string-util/string_util.h"
 #include "infrastructure/kernel/run_command.h"
 
 XUANSONG_NAMESPACE_HEADER_START

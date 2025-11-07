@@ -1,5 +1,5 @@
 #include "infrastructure/base/command.h"
-#include "infrastructure/utils/log/log.h"
+#include "infrastructure/utils/log-util/log_util.h"
 #include "solving/solver-runner/solver_runner.h"
 
 XUANSONG_NAMESPACE_HEADER_START

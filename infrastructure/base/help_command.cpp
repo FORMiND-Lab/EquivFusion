@@ -1,6 +1,6 @@
 #include "infrastructure/base/command.h"
 #include "infrastructure/base/commandManager.h"
-#include "infrastructure/utils/log/log.h"
+#include "infrastructure/utils/log-util/log_util.h"
 
 XUANSONG_NAMESPACE_HEADER_START
 

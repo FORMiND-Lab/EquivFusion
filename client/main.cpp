@@ -1,6 +1,6 @@
 #include <iostream>
 #include "libs/cxxopts/cxxopts.hpp"
-#include "infrastructure/utils/log/log.h"
+#include "infrastructure/utils/log-util/log_util.h"
 #include "infrastructure/base/commandManager.h"
 #include "infrastructure/kernel/run_command.h"
 
