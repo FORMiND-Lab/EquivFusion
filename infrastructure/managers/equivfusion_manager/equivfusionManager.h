@@ -5,6 +5,12 @@
 
 XUANSONG_NAMESPACE_HEADER_START
 
+enum class ModuleType {
+    UNKNOWN,
+    SPEC,
+    IMPL,
+    MITER
+};
 
 class EquivFusionManager {
 private:
@@ -35,6 +41,9 @@ public:
     void setMergedModuleOp(mlir::OwningOpRef<mlir::ModuleOp> &module);
     mlir::ModuleOp getMergedModuleOp();
     mlir::MLIRContext* getGlobalContext();
+
+    void setModuleOp(mlir::OwningOpRef<mlir::ModuleOp> &module, ModuleType moduleType);
+    mlir::ModuleOp getModuleOp(ModuleType moduleType);
 
 };
 

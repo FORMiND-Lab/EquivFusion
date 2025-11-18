@@ -2,6 +2,7 @@
 #include "infrastructure/managers/equivfusion_manager/equivfusionManager.h"
 #include "infrastructure/utils/namespace_macro.h"
 #include "infrastructure/utils/log-util/log_util.h"
+#include "infrastructure/utils/path-util/path_util.h"
 
 #include "llvm/Support/LogicalResult.h"
 #include "llvm/Support/MemoryBuffer.h"
@@ -107,6 +108,7 @@ bool ReadCCommand::parseOptions(const std::vector<std::string>& args, ReadCComma
             opts.impl = true;
         } else {
             opts.inputFile = args[argidx].c_str();
+            Utils::PathUtil::expandTilde(opts.inputFile);
         }
     }
 

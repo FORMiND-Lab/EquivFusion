@@ -48,6 +48,8 @@ target_link_libraries(base
     EquivFusionRemoveRedundantFunc
     EquivFusionConvertCaseToLogicalComparison
 
+    EquivFusionPassTemporalUnroll
+
     EquivFusionManager
     EquivFusionUtils
 )

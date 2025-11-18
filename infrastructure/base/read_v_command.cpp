@@ -2,6 +2,7 @@
 #include "infrastructure/managers/equivfusion_manager/equivfusionManager.h"
 #include "infrastructure/utils/namespace_macro.h"
 #include "infrastructure/utils/log-util/log_util.h"
+#include "infrastructure/utils/path-util/path_util.h"
 
 #include "llvm/Support/LogicalResult.h"
 #include "llvm/Support/MemoryBuffer.h"
@@ -324,7 +325,9 @@ bool ReadVCommand::parseOptions(const std::vector<std::string>& args, ReadVComma
                 opts.libraryFiles.emplace_back(args[argidx].substr(len));
             }
         } else {
-            opts.inputFiles.emplace_back(args[argidx]);
+            std::string file = args[argidx];
+            Utils::PathUtil::expandTilde(file);
+            opts.inputFiles.emplace_back(file);
         }
     }
 
