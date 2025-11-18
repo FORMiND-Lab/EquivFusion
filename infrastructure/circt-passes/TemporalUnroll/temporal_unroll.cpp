@@ -75,29 +75,28 @@ void EquivFusionTemporalUnrollPass::initializeMapping(hw::HWModuleOp module, hw:
 }
 
 void EquivFusionTemporalUnrollPass::unrollFirRegOp(OpBuilder &builder, seq::FirRegOp op, unsigned step) {
-	// TODO (taomengxia): initial value/preset value
-	auto data = op.getNext();
+	// TODO (taomengxia): reset value
+	auto next = op.getNext();
 	auto clk = op.getClk();
 	auto result = op.getResult();
 
 	if (step == 0) {
-		currMapping_.map(result, currMapping_.lookupOrNull(data));
+		// TODO(taomengxia): initial value
+		// currResult = currNext
+		currMapping_.map(result, currMapping_.lookupOrNull(next));
 	} else {
-		// reg = (!prevClk && currClk) ? currentData : prevReg
-		Value prevReg = prevMapping_.lookupOrNull(result);
-		Value prevClk = prevMapping_.lookupOrNull(clk);
-		Value currData = currMapping_.lookupOrNull(data);
-		Value currClk = currMapping_.lookupOrNull(clk);
-
-		Value prevClkValue = seq::FromClockOp::create(builder, op.getLoc(), prevClk);
-		Value currClkValue = seq::FromClockOp::create(builder, op.getLoc(), currClk);
-
+		// currResult = (!prevClk && currClk) ? currNext : prevResult
 		Value constOne = hw::ConstantOp::create(builder, op.getLoc(), builder.getI1Type(), 1);
-		Value notPrevClk = comb::XorOp::create(builder, op.getLoc(), prevClkValue, constOne);
-		Value clockEdge = comb::AndOp::create(builder, op.getLoc(), notPrevClk, currClkValue);
-		Value reg = comb::MuxOp::create(builder, op.getLoc(), clockEdge, currData, prevReg);
+		Value prevClk = seq::FromClockOp::create(builder, op.getLoc(), prevMapping_.lookupOrNull(clk));
+		Value notPrevClk = comb::XorOp::create(builder, op.getLoc(), prevClk, constOne);
+		Value currClk = seq::FromClockOp::create(builder, op.getLoc(), currMapping_.lookupOrNull(clk));
+		Value clockEdge = comb::AndOp::create(builder, op.getLoc(), notPrevClk, currClk);
 
-		currMapping_.map(result, reg);
+		Value prevResult = prevMapping_.lookupOrNull(result);
+		Value currNext = currMapping_.lookupOrNull(next);
+		Value currResult = comb::MuxOp::create(builder, op.getLoc(), clockEdge, currNext, prevResult);
+
+		currMapping_.map(result, currResult);
 	}
 }
 
@@ -122,7 +121,7 @@ LogicalResult EquivFusionTemporalUnrollPass::creatUnrollModuleBody(OpBuilder &bu
 				unrollFirRegOp(builder, firregOp, step);
 			} else {
 				// Clone operation with mapping
-				Operation *clonedOp = builder.clone(op, currMapping_);
+				builder.clone(op, currMapping_);
 			}
 		}
 	}
