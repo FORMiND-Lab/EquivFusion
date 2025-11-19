@@ -144,25 +144,25 @@ void EquivFusionTemporalUnrollPass::unrollFirRegOp(OpBuilder &builder, seq::FirR
 	auto next = op.getNext();
 	auto clk = op.getClk();
 	auto result = op.getResult();
+	Value currResult;
 
 	if (step == 0) {
 		// TODO(taomengxia): initial value
-		// currResult = currNext
-		currMapper.set(result, currMapper.get(next));
+		// currResult = initial value
+		currResult = prevMapper.get(result);
 	} else {
 		// currResult = (!prevClk && currClk) ? currNext : prevResult
-		Value constOne = hw::ConstantOp::create(builder, op.getLoc(), builder.getI1Type(), 1);
-		Value prevClk = seq::FromClockOp::create(builder, op.getLoc(), prevMapper.get(clk));
-		Value notPrevClk = comb::XorOp::create(builder, op.getLoc(), prevClk, constOne);
-		Value currClk = seq::FromClockOp::create(builder, op.getLoc(), currMapper.get(clk));
-		Value clockEdge = comb::AndOp::create(builder, op.getLoc(), notPrevClk, currClk);
+		auto constOne = hw::ConstantOp::create(builder, op.getLoc(), builder.getI1Type(), 1);
+		auto prevClk = seq::FromClockOp::create(builder, op.getLoc(), prevMapper.get(clk));
+		auto notPrevClk = comb::XorOp::create(builder, op.getLoc(), prevClk, constOne);
+		auto currClk = seq::FromClockOp::create(builder, op.getLoc(), currMapper.get(clk));
+		auto clockEdge = comb::AndOp::create(builder, op.getLoc(), notPrevClk, currClk);
 
-		Value prevResult = prevMapper.get(result);
-		Value currNext = currMapper.get(next);
-		Value currResult = comb::MuxOp::create(builder, op.getLoc(), clockEdge, currNext, prevResult);
-
-		currMapper.set(result, currResult);
+		auto prevResult = prevMapper.get(result);
+		auto currNext = currMapper.get(next);
+		currResult = comb::MuxOp::create(builder, op.getLoc(), clockEdge, currNext, prevResult);
 	}
+	currMapper.set(result, currResult);
 }
 
 void EquivFusionTemporalUnrollPass::runOnOperation() {
