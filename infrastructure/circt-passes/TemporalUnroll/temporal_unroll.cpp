@@ -2,9 +2,9 @@
 #include "circt/Dialect/HW/HWOps.h"
 #include "circt/Dialect/Comb/CombOps.h"
 #include "circt/Dialect/Seq/SeqOps.h"
+#include "circt/Support/BackedgeBuilder.h"
+#include "circt/Support/ValueMapper.h"
 #include "mlir/IR/IRMapping.h"
-
-#include <iostream>
 
 namespace circt {
 #define GEN_PASS_DEF_EQUIVFUSIONTEMPORALUNROLL
@@ -22,20 +22,33 @@ struct EquivFusionTemporalUnrollPass
     void runOnOperation() override;
 
 private:
-	/// Main unrolling implementation
     LogicalResult unrollModule(OpBuilder &builder, hw::HWModuleOp module);
 
 	hw::HWModuleOp createUnrollModule(OpBuilder &builder, hw::HWModuleOp module);
-
-	void initializeMapping(hw::HWModuleOp module, hw::HWModuleOp newModule, unsigned step);
-	void unrollFirRegOp(OpBuilder &builder, seq::FirRegOp op, unsigned step);
 	LogicalResult creatUnrollModuleBody(OpBuilder &builder, hw::HWModuleOp module, hw::HWModuleOp newModule);
 
-private:
-	IRMapping prevMapping_;
-	IRMapping currMapping_;
+	void initialRegistersResult(OpBuilder &builder, hw::HWModuleOp module, ValueMapper &currMapper);
+	void prepareStepMapper(hw::HWModuleOp module, hw::HWModuleOp newModule,
+				           ValueMapper &prevMapper, ValueMapper &currMapper, unsigned step);
+	void unrollFirRegOp(OpBuilder &builder, seq::FirRegOp op,
+	                    ValueMapper &prevMapper, ValueMapper &currMapper, unsigned step);
 };
 } // namespace
+
+
+LogicalResult EquivFusionTemporalUnrollPass::unrollModule(OpBuilder &builder, hw::HWModuleOp module) {
+	// Step 1: Create new module
+	auto newModule = createUnrollModule(builder, module);
+
+	// Step 2: Cteate new module body
+	if (failed(creatUnrollModuleBody(builder, module, newModule))) {
+		return failure();
+	}
+
+	// Step 3: Remove original module
+	module.erase();
+	return success();
+}
 
 hw::HWModuleOp EquivFusionTemporalUnrollPass::createUnrollModule(OpBuilder &builder, hw::HWModuleOp module) {
 	// Copy timeSteps ports of original module
@@ -58,9 +71,61 @@ hw::HWModuleOp EquivFusionTemporalUnrollPass::createUnrollModule(OpBuilder &buil
 	return newModule;
 }
 
-void EquivFusionTemporalUnrollPass::initializeMapping(hw::HWModuleOp module, hw::HWModuleOp newModule, unsigned step) {
-	prevMapping_ = std::move(currMapping_);
-	currMapping_.clear();
+LogicalResult EquivFusionTemporalUnrollPass::creatUnrollModuleBody(OpBuilder &builder, hw::HWModuleOp module,
+																	hw::HWModuleOp newModule) {
+	Block *newBlock = newModule.getBodyBlock();
+	builder.setInsertionPointToEnd(newBlock);
+
+	BackedgeBuilder bb(builder, module.getLoc());
+	ValueMapper prevMapper(&bb);
+	ValueMapper currMapper(&bb);
+
+	initialRegistersResult(builder, module, currMapper);
+
+	SmallVector<Value> newOutputValues;;
+	Block *oldBlock = module.getBodyBlock();
+	for (unsigned step = 0; step < timeSteps; ++step) {
+		prepareStepMapper(module, newModule, prevMapper, currMapper, step);
+
+		for (auto &op : oldBlock->getOperations()) {
+			if (auto outputOp = dyn_cast<hw::OutputOp>(op)) {
+				// OutputOp: collecting output values
+				for (auto output : outputOp.getOperands())
+					newOutputValues.push_back(currMapper.get(output));
+			} else if (auto firregOp = dyn_cast<seq::FirRegOp>(op)) {
+				unrollFirRegOp(builder, firregOp, prevMapper, currMapper, step);
+			} else {
+				// Clone operation with mapping
+				IRMapping bvMapper;
+				for (auto operand : op.getOperands())
+					bvMapper.map(operand, currMapper.get(operand));
+				auto *newOp = builder.clone(op, bvMapper);
+				for (auto &&[oldRes, newRes] : llvm::zip(op.getResults(), newOp->getResults()))
+					currMapper.set(oldRes, newRes);
+			}
+		}
+	}
+
+	// Create final output operation
+	builder.create<hw::OutputOp>(newModule.getLoc(), newOutputValues);
+	return success();
+}
+
+void EquivFusionTemporalUnrollPass::initialRegistersResult(OpBuilder &builder, hw::HWModuleOp module,
+                                                             ValueMapper &currMapper) {
+	// TODO(taomengxia): initial register result with zero
+	Block *oldBlock = module.getBodyBlock();
+	for (auto &op : oldBlock->getOperations()) {
+		if (auto firregOp = dyn_cast<seq::FirRegOp>(op)) {
+			auto initValue = hw::ConstantOp::create(builder, firregOp.getLoc(), firregOp.getType(), 0);
+			currMapper.set(firregOp.getResult(), initValue);
+		}
+	}
+}
+
+void EquivFusionTemporalUnrollPass::prepareStepMapper(hw::HWModuleOp module, hw::HWModuleOp newModule,
+                                                      ValueMapper &prevMapper, ValueMapper& currMapper, unsigned step) {
+	prevMapper = currMapper;
 
 	Block *oldBody = module.getBodyBlock();
 	Block *newBody = newModule.getBodyBlock();
@@ -68,13 +133,13 @@ void EquivFusionTemporalUnrollPass::initializeMapping(hw::HWModuleOp module, hw:
 	auto oldArgumentsSize = oldBody->getArguments().size();
 	for (unsigned argIdx = 0; argIdx < oldArgumentsSize; ++argIdx) {
 		Value oldArgValue = oldBody->getArgument(argIdx);
-		unsigned newIndex = argIdx + step * oldArgumentsSize;
-		Value newArgValue = newBody->getArgument(newIndex);
-		currMapping_.map(oldArgValue, newArgValue);
+		Value newArgValue = newBody->getArgument(argIdx + step * oldArgumentsSize);
+		currMapper.set(oldArgValue, newArgValue);
  	}
 }
 
-void EquivFusionTemporalUnrollPass::unrollFirRegOp(OpBuilder &builder, seq::FirRegOp op, unsigned step) {
+void EquivFusionTemporalUnrollPass::unrollFirRegOp(OpBuilder &builder, seq::FirRegOp op,
+                                                   ValueMapper &prevMapper, ValueMapper& currMapper, unsigned step) {
 	// TODO (taomengxia): reset value
 	auto next = op.getNext();
 	auto clk = op.getClk();
@@ -83,67 +148,21 @@ void EquivFusionTemporalUnrollPass::unrollFirRegOp(OpBuilder &builder, seq::FirR
 	if (step == 0) {
 		// TODO(taomengxia): initial value
 		// currResult = currNext
-		currMapping_.map(result, currMapping_.lookupOrNull(next));
+		currMapper.set(result, currMapper.get(next));
 	} else {
 		// currResult = (!prevClk && currClk) ? currNext : prevResult
 		Value constOne = hw::ConstantOp::create(builder, op.getLoc(), builder.getI1Type(), 1);
-		Value prevClk = seq::FromClockOp::create(builder, op.getLoc(), prevMapping_.lookupOrNull(clk));
+		Value prevClk = seq::FromClockOp::create(builder, op.getLoc(), prevMapper.get(clk));
 		Value notPrevClk = comb::XorOp::create(builder, op.getLoc(), prevClk, constOne);
-		Value currClk = seq::FromClockOp::create(builder, op.getLoc(), currMapping_.lookupOrNull(clk));
+		Value currClk = seq::FromClockOp::create(builder, op.getLoc(), currMapper.get(clk));
 		Value clockEdge = comb::AndOp::create(builder, op.getLoc(), notPrevClk, currClk);
 
-		Value prevResult = prevMapping_.lookupOrNull(result);
-		Value currNext = currMapping_.lookupOrNull(next);
+		Value prevResult = prevMapper.get(result);
+		Value currNext = currMapper.get(next);
 		Value currResult = comb::MuxOp::create(builder, op.getLoc(), clockEdge, currNext, prevResult);
 
-		currMapping_.map(result, currResult);
+		currMapper.set(result, currResult);
 	}
-}
-
-LogicalResult EquivFusionTemporalUnrollPass::creatUnrollModuleBody(OpBuilder &builder, hw::HWModuleOp module,
-																	hw::HWModuleOp newModule) {
-	Block *newBlock = newModule.getBodyBlock();
-	builder.setInsertionPointToEnd(newBlock);
-
-	SmallVector<Value> newOutputValues;;
-	Block *oldBlock = module.getBodyBlock();
-	for (unsigned step = 0; step < timeSteps; ++step) {
-		initializeMapping(module, newModule, step);
-
-		for (auto &op : oldBlock->getOperations()) {
-			if (auto outputOp = dyn_cast<hw::OutputOp>(op)) {
-				// Handle output operaton by collecting output values
-				for (auto outputVal : outputOp.getOperands()) {
-					Value mappedVal = currMapping_.lookupOrNull(outputVal);
-					newOutputValues.push_back(mappedVal);
-				}
-			} else if (auto firregOp = dyn_cast<seq::FirRegOp>(op)) {
-				unrollFirRegOp(builder, firregOp, step);
-			} else {
-				// Clone operation with mapping
-				builder.clone(op, currMapping_);
-			}
-		}
-	}
-
-	// Create final output operation
-	builder.setInsertionPointToEnd(newBlock);
-	builder.create<hw::OutputOp>(newModule.getLoc(), newOutputValues);
-	return success();
-}
-
-LogicalResult EquivFusionTemporalUnrollPass::unrollModule(OpBuilder &builder, hw::HWModuleOp module) {
-	// Step 1: Create new module
-	auto newModule = createUnrollModule(builder, module);
-
-	// Step 2: Cteate new module body
-	if (failed(creatUnrollModuleBody(builder, module, newModule))) {
-		return failure();
-	}
-
-	// Step 3: Remove original module
-	module.erase();
-	return success();
 }
 
 void EquivFusionTemporalUnrollPass::runOnOperation() {
