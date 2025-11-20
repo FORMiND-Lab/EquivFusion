@@ -49,6 +49,37 @@ mlir::ModuleOp EquivFusionManager::getMergedModuleOp() {
     return mergedModuleOp_ ? mergedModuleOp_.get() : nullptr;
 }
 
+void EquivFusionManager::setModuleOp(mlir::OwningOpRef<mlir::ModuleOp> &module, ModuleType moduleType) {
+    switch (moduleType) {
+        case ModuleType::UNKNOWN:
+            assert(0 && "Invalid module type: UNKNOWN");
+            break;
+        case ModuleType::SPEC:
+            setSpecModuleOp(module);
+            break;
+        case ModuleType::IMPL:
+            setImplModuleOp(module);
+            break;
+        case ModuleType::MITER:
+            setMergedModuleOp(module);
+            break;
+    }
+}
+
+mlir::ModuleOp EquivFusionManager::getModuleOp(ModuleType moduleType) {
+    switch (moduleType) {
+        case ModuleType::UNKNOWN:
+            assert(0 && "Invalid module type: UNKNOWN");
+            return nullptr;
+        case ModuleType::SPEC:
+            return getSpecModuleOp();
+        case ModuleType::IMPL:
+            return getImplModuleOp();
+        case ModuleType::MITER:
+            return getMergedModuleOp();
+    }
+}
+
 mlir::MLIRContext* EquivFusionManager::getGlobalContext() {
     if (!globalContext_) {
         mlir::DialectRegistry registry;

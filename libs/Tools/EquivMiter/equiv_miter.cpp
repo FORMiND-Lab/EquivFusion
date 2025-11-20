@@ -206,14 +206,14 @@ LogicalResult EquivMiterTool::miterToBTOR2(mlir::PassManager& pm, mlir::ModuleOp
 bool EquivMiterTool::parseOptions(const std::vector<std::string> &args, EquivMiterToolOptions& opts) {
     for (size_t idx = 0; idx < args.size(); idx++) {
         auto arg = args[idx];
-        if (arg == "-specModule" && idx + 1 < args.size()) {
+        if ((arg == "-specModule" || arg == "--specModule") && idx + 1 < args.size()) {
             opts.specModuleName = args[++idx];
-        } else if (arg == "-implModule" && idx + 1 < args.size()) {
+        } else if ((arg == "-implModule" || arg == "--implModule") && idx + 1 < args.size()) {
             opts.implModuleName = args[++idx];
         } else if (arg == "-o" && idx + 1 < args.size()) {
             opts.outputFilename = args[++idx];
             Utils::PathUtil::expandTilde(opts.outputFilename);
-        } else if (arg == "-mitermode" && idx + 1 < args.size()) {
+        } else if ((arg == "-mitermode" || arg == "--mitermode") && idx + 1 < args.size()) {
             auto val = args[++idx];
             if (val == "aiger") {
                 opts.miterMode = EquivFusionMiter::MiterModeEnum::AIGER;
@@ -229,7 +229,7 @@ bool EquivMiterTool::parseOptions(const std::vector<std::string> &args, EquivMit
     }    
 
     if (opts.specModuleName.empty() || opts.implModuleName.empty()) {
-        log("Both -specModule and -implModule must be specified.\n");
+        log("Both --specModule and --implModule must be specified.\n");
         return false;
     }
 
@@ -239,14 +239,12 @@ bool EquivMiterTool::parseOptions(const std::vector<std::string> &args, EquivMit
 void EquivMiterTool::help(const std::string& name, const std::string& description) {
     log("\n");
     log("   OVERVIEW: %s - %s\n", name.c_str(), description.c_str());;
-    log("   USAGE:    %s <-specModule name> <-implModule name> [options]\n", name.c_str());
+    log("   USAGE:    %s <--specModule name> <--implModule name> [options]\n", name.c_str());
     log("   OPTIONS:\n");
-    log("       -specModule <module name> -------------- Specify a named module for the specification circuit\n");
-    log("       -implModule <module name> -------------- Specify a named module for the implementation circuit\n");
-    log("       -mitermode ----------------------------- MiterMode [smtlib, aiger, btor2], default is smtlib\n");
+    log("       --specModule <module name> ------------- Specify a named module for the specification circuit\n");
+    log("       --implModule <module name> ------------- Specify a named module for the implementation circuit\n");
+    log("       --mitermode ---------------------------- MiterMode [smtlib, aiger, btor2], default is smtlib\n");
     log("       -o ------------------------------------- Output filename\n");
-    log("   Example:");
-    log("       equiv_miter -specModule specModuleName -implModule implModuleName");
     log("\n\n");
 }
 

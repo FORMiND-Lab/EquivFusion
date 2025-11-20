@@ -12,12 +12,7 @@ XUANSONG_NAMESPACE_HEADER_START
 
 struct WriteMLIROptions {
     std::string outputFilename {"-"};
-    enum class ModuleEnum {
-        IMPL,
-        SPEC,
-        MITER
-    };
-    ModuleEnum module {ModuleEnum::IMPL};
+    ModuleType moduleType {ModuleType::UNKNOWN};
 };
 
 struct WriteMLIRCommand : public Command {
@@ -34,7 +29,6 @@ public:
     void execute(const std::vector<std::string>& args) override {
         WriteMLIROptions opts;
         if (!parseOptions(args, opts)) {
-            log("[write_mlir]: parse options failed\n\n");
             return;
         }
 
@@ -50,9 +44,11 @@ public:
     void help() override {
         log("\n");
         log("   OVERVIEW: %s - %s\n", getName().c_str(), getDescription().c_str());
-        log("   USAGE:    %s [--module spec | impl | miter] <outputfile>\n", getName().c_str());
+        log("   USAGE:    %s [--spec | --impl | --miter] <outputfile>\n", getName().c_str());
         log("   OPTIONS:\n");
-        log("       --module ------------------------------------ Write module [spec, impl, miter]. \n");
+        log("       --spec ------------------------------------ specification module\n");
+        log("       --impl ------------------------------------ implementation module \n");
+        log("       --miter ----------------------------------- miter module\n");
         log("   Example:  %s test.output", getName().c_str());
         log("\n\n");
     }
@@ -68,22 +64,21 @@ private:
 bool WriteMLIRCommand::parseOptions(const std::vector<std::string>& args, WriteMLIROptions& opts) {
     for (size_t idx = 0; idx < args.size(); idx++) {
         auto arg = args[idx];
-        if ((arg == "--module" || arg == "-module") && idx + 1 < args.size()) {
-            auto val = args[++idx];
-            if (val == "spec") {
-                opts.module = WriteMLIROptions::ModuleEnum::SPEC;
-            } else if (val == "impl") {
-                opts.module = WriteMLIROptions::ModuleEnum::IMPL;
-            } else if (val == "miter") {
-                opts.module = WriteMLIROptions::ModuleEnum::MITER;
-            } else {
-                log("Wrong options val of -mode.\n");
-                return false;
-            }
+        if (arg == "--spec" || arg == "-spec") {
+            opts.moduleType = ModuleType::SPEC;
+        } else if (arg == "--impl" || arg == "-impl") {
+            opts.moduleType = ModuleType::IMPL;
+        } else if (arg == "--miter" || arg == "-miter") {
+            opts.moduleType = ModuleType::MITER;
         } else {
             opts.outputFilename = arg;
             Utils::PathUtil::expandTilde(opts.outputFilename);
         }
+    }
+
+    if (opts.moduleType == ModuleType::UNKNOWN) {
+        log("[write_mlir]: please specify module type.\n");
+        return false;
     }
     return true;
 }
@@ -91,20 +86,7 @@ bool WriteMLIRCommand::parseOptions(const std::vector<std::string>& args, WriteM
 /// Run write_mlir with WriteMLIROptions
 bool WriteMLIRCommand::run(const WriteMLIROptions& opts) {
     // Check module
-    mlir::ModuleOp module;
-    switch (opts.module) {
-    case WriteMLIROptions::ModuleEnum::SPEC:
-        module = EquivFusionManager::getInstance()->getSpecModuleOp();
-        break;
-    case WriteMLIROptions::ModuleEnum::IMPL:
-        module = EquivFusionManager::getInstance()->getImplModuleOp();
-        break;
-    case WriteMLIROptions::ModuleEnum::MITER:
-        module = EquivFusionManager::getInstance()->getMergedModuleOp();
-        break;
-    default:
-        assert(0 && "Wrong mode.\n");
-    }
+    mlir::ModuleOp module = EquivFusionManager::getInstance()->getModuleOp(opts.moduleType);
     if (!module) {
         return true;
     }

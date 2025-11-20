@@ -1,0 +1,5 @@
+set(LLVM_TARGET_DEFINITIONS Passes.td)
+mlir_tablegen(Passes.h.inc -gen-pass-decls -name EquivFusionTemporalUnroll)
+mlir_tablegen(EquivFusionTemporalUnroll.capi.h.inc -gen-pass-capi-header --prefix EquivFusionTemporalUnroll)
+mlir_tablegen(EquivFusionTemporalUnroll.capi.cpp.inc -gen-pass-capi-impl --prefix EquivFusionTemporalUnroll)
+add_public_tablegen_target(EquivFusionTemporalUnrollIncGen)
