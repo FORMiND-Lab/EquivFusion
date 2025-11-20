@@ -42,11 +42,10 @@ struct UnrollCommand : public Command {
     void help() override {
         log("\n");
         log("   OVERVIEW: %s - %s\n", getName().c_str(), getDescription().c_str());
-        log("   USAGE:    unroll [options] <--spec | --impl | --miter>\n");
+        log("   USAGE:    unroll [options] <--spec | --impl>\n");
         log("   OPTIONS:\n");
         log("       --spec --------------------------------- specification module\n");
         log("       --impl --------------------------------- implementation module\n");
-        log("       --miter -------------------------------- miter module\n");
         log("       --steps -------------------------------- unroll steps\n");
         log("\n");
     }
@@ -64,8 +63,6 @@ bool UnrollCommand::parseOptions(const std::vector<std::string> &args, UnrollOpt
             opts.moduleType = ModuleType::SPEC;
         } else if (args[idx] == "--impl" || args[idx] == "-impl") {
             opts.moduleType = ModuleType::IMPL;
-        } else if (args[idx] == "--miter" || args[idx] == "-miter") {
-            opts.moduleType = ModuleType::MITER;
         }
     }
     if (opts.moduleType == ModuleType::UNKNOWN) {
