@@ -145,6 +145,7 @@ void EquivFusionTemporalUnrollPass::prepareStepMapper(OpBuilder &builder, ValueM
     auto moduleType = module.getModuleType();
 
     auto numArguments = body->getNumArguments();
+
     auto newNumArguments = newBody->getNumArguments();
     unsigned newArgIdx = newNumArguments / timeSteps * step;
     for (unsigned argIdx = 0; argIdx < numArguments; ++argIdx) {
@@ -164,28 +165,55 @@ void EquivFusionTemporalUnrollPass::prepareStepMapper(OpBuilder &builder, ValueM
 
 void EquivFusionTemporalUnrollPass::unrollFirRegOp(OpBuilder &builder, seq::FirRegOp regOp,
                                                    ValueMapper &prevMapper, ValueMapper &currMapper, unsigned step) {
-    // TODO (taomengxia): reset value
-    auto next = regOp.getNext();
     auto clk = regOp.getClk();
+    auto next = regOp.getNext();
     auto result = regOp.getResult();
 
-    auto prevResult = prevMapper.get(result);
+    if (step == 0) {
+        // currResult = hasReset : resetValue : initialValue
+        auto currResult = regOp.hasReset() ? currMapper.get(regOp.getResetValue()) : prevMapper.get(result);
+        currMapper.set(result, currResult);
+        return;
+    }
+
+    auto loc = regOp.getLoc();
+
+    auto constOne = hw::ConstantOp::create(builder, loc, builder.getI1Type(), 1);
+    auto prevClk = seq::FromClockOp::create(builder, loc, prevMapper.get(clk));
+    auto currClk = seq::FromClockOp::create(builder, loc, currMapper.get(clk));
+    auto notPrevClk = comb::XorOp::create(builder, loc, prevClk, constOne);
+    auto clockEdge = comb::AndOp::create(builder, loc, notPrevClk, currClk);
 
     Value currResult;
-    if (step == 0) {
-        // TODO(taomengxia): initial value
-        // currResult = initial value
-        currResult = prevResult;
-    } else {
-        // currResult = (!prevClk && currClk) ? currNext : prevResult
-        auto constOne = hw::ConstantOp::create(builder, regOp.getLoc(), builder.getI1Type(), 1);
-        auto prevClk = seq::FromClockOp::create(builder, regOp.getLoc(), prevMapper.get(clk));
-        auto notPrevClk = comb::XorOp::create(builder, regOp.getLoc(), prevClk, constOne);
-        auto currClk = seq::FromClockOp::create(builder, regOp.getLoc(), currMapper.get(clk));
-        auto clockEdge = comb::AndOp::create(builder, regOp.getLoc(), notPrevClk, currClk);
+    if (regOp.hasReset()) {
+        auto reset = regOp.getReset();
+        auto resetValue = regOp.getResetValue();
+        if (regOp.getIsAsync()) {
+            //  currResult = (posedge reset) ? currResetValue :
+            //                                 ((posedge clk) ? currNext : prevResult)
+            auto notPrevReset = comb::XorOp::create(builder, loc, prevMapper.get(reset), constOne);
+            auto resetEdge = comb::AndOp::create(builder, loc, notPrevReset, currMapper.get(reset));
 
-        auto currNext = currMapper.get(next);
-        currResult = comb::MuxOp::create(builder, regOp.getLoc(), clockEdge, currNext, prevResult);
+            currResult = resetEdge;
+            currResult = comb::MuxOp::create(builder, loc, resetEdge,
+                                             currMapper.get(resetValue),
+                                             comb::MuxOp::create(builder, loc, clockEdge,
+                                                                 currMapper.get(next),
+                                                                 prevMapper.get(result)));
+        } else {
+            // currResult = (posedge clk) ? ((currReset) ? currResetValue : currNext)) :
+            //                                             prevResult
+            currResult = comb::MuxOp::create(builder, loc, clockEdge,
+                                             comb::MuxOp::create(builder, loc, currMapper.get(reset),
+                                                                 currMapper.get(resetValue),
+                                                                 currMapper.get(next)),
+                                             prevMapper.get(result));
+        }
+    } else {
+        // currResult = (posedge clk) ? currNext : prevResult
+        currResult = comb::MuxOp::create(builder, regOp.getLoc(), clockEdge,
+                                         currMapper.get(next),
+                                         prevMapper.get(result));
     }
     currMapper.set(result, currResult);
 }
