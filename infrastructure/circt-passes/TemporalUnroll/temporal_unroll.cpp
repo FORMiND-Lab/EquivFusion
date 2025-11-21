@@ -165,10 +165,7 @@ void EquivFusionTemporalUnrollPass::prepareStepMapper(OpBuilder &builder, ValueM
 
 void EquivFusionTemporalUnrollPass::unrollFirRegOp(OpBuilder &builder, seq::FirRegOp regOp,
                                                    ValueMapper &prevMapper, ValueMapper &currMapper, unsigned step) {
-    auto clk = regOp.getClk();
-    auto next = regOp.getNext();
     auto result = regOp.getResult();
-
     if (step == 0) {
         // currResult = hasReset : resetValue : initialValue
         auto currResult = regOp.hasReset() ? currMapper.get(regOp.getResetValue()) : prevMapper.get(result);
@@ -178,42 +175,40 @@ void EquivFusionTemporalUnrollPass::unrollFirRegOp(OpBuilder &builder, seq::FirR
 
     auto loc = regOp.getLoc();
 
+    auto clk = regOp.getClk();
     auto constOne = hw::ConstantOp::create(builder, loc, builder.getI1Type(), 1);
     auto prevClk = seq::FromClockOp::create(builder, loc, prevMapper.get(clk));
     auto currClk = seq::FromClockOp::create(builder, loc, currMapper.get(clk));
     auto notPrevClk = comb::XorOp::create(builder, loc, prevClk, constOne);
     auto clockEdge = comb::AndOp::create(builder, loc, notPrevClk, currClk);
 
+    auto prevResult = prevMapper.get(regOp.getResult());
+    auto currNext = currMapper.get(regOp.getNext());
+
     Value currResult;
     if (regOp.hasReset()) {
-        auto reset = regOp.getReset();
-        auto resetValue = regOp.getResetValue();
+        auto currReset = currMapper.get(regOp.getReset());
+        auto currResetValue = currMapper.get(regOp.getResetValue());
         if (regOp.getIsAsync()) {
             //  currResult = (posedge reset) ? currResetValue :
             //                                 ((posedge clk) ? currNext : prevResult)
-            auto notPrevReset = comb::XorOp::create(builder, loc, prevMapper.get(reset), constOne);
-            auto resetEdge = comb::AndOp::create(builder, loc, notPrevReset, currMapper.get(reset));
+            auto prevReset = prevMapper.get(regOp.getReset());
+            auto notPrevReset = comb::XorOp::create(builder, loc, prevReset, constOne);
+            auto resetEdge = comb::AndOp::create(builder, loc, notPrevReset, currReset);
 
-            currResult = resetEdge;
             currResult = comb::MuxOp::create(builder, loc, resetEdge,
-                                             currMapper.get(resetValue),
-                                             comb::MuxOp::create(builder, loc, clockEdge,
-                                                                 currMapper.get(next),
-                                                                 prevMapper.get(result)));
+                                             currResetValue,
+                                             comb::MuxOp::create(builder, loc, clockEdge, currNext, prevResult));
         } else {
             // currResult = (posedge clk) ? ((currReset) ? currResetValue : currNext)) :
             //                                             prevResult
             currResult = comb::MuxOp::create(builder, loc, clockEdge,
-                                             comb::MuxOp::create(builder, loc, currMapper.get(reset),
-                                                                 currMapper.get(resetValue),
-                                                                 currMapper.get(next)),
-                                             prevMapper.get(result));
+                                             comb::MuxOp::create(builder, loc, currReset, currResetValue, currNext),
+                                             prevResult);
         }
     } else {
         // currResult = (posedge clk) ? currNext : prevResult
-        currResult = comb::MuxOp::create(builder, regOp.getLoc(), clockEdge,
-                                         currMapper.get(next),
-                                         prevMapper.get(result));
+        currResult = comb::MuxOp::create(builder, regOp.getLoc(), clockEdge, currNext, prevResult);
     }
     currMapper.set(result, currResult);
 }
