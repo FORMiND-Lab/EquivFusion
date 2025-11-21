@@ -83,6 +83,7 @@ hw::HWModuleOp EquivFusionTemporalUnrollPass::createUnrollModule(OpBuilder &buil
 
 LogicalResult EquivFusionTemporalUnrollPass::creatUnrollModuleBody(OpBuilder &builder, hw::HWModuleOp module,
                                                                    hw::HWModuleOp newModule) {
+    Block *oldBlock = module.getBodyBlock();
     Block *newBlock = newModule.getBodyBlock();
     builder.setInsertionPointToEnd(newBlock);
 
@@ -93,12 +94,11 @@ LogicalResult EquivFusionTemporalUnrollPass::creatUnrollModuleBody(OpBuilder &bu
     initialRegistersResult(builder, currMapper, module);
 
     SmallVector<Value> newOutputValues;;
-    Block *oldBlock = module.getBodyBlock();
     for (unsigned step = 0; step < timeSteps; ++step) {
         prevMapper = currMapper;
         prepareStepMapper(builder, currMapper, module, newModule, step);
 
-        module->walk([&](Operation *op) {
+        for (auto &op: oldBlock->getOperations()) {
             if (auto outputOp = dyn_cast<hw::OutputOp>(op)) {
                 // OutputOp: collecting output values
                 for (auto output : outputOp.getOperands())
