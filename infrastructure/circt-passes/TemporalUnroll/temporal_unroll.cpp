@@ -27,14 +27,22 @@ private:
 	hw::HWModuleOp createUnrollModule(OpBuilder &builder, hw::HWModuleOp module);
 	LogicalResult creatUnrollModuleBody(OpBuilder &builder, hw::HWModuleOp module, hw::HWModuleOp newModule);
 
-	void initialRegistersResult(OpBuilder &builder, hw::HWModuleOp module, ValueMapper &currMapper);
-	void prepareStepMapper(hw::HWModuleOp module, hw::HWModuleOp newModule,
-				           ValueMapper &prevMapper, ValueMapper &currMapper, unsigned step);
+	void initialRegistersResult(OpBuilder &builder, ValueMapper &currMapper, hw::HWModuleOp module);
+	void prepareStepMapper(OpBuilder &builder, ValueMapper &currMapper,
+						   hw::HWModuleOp module, hw::HWModuleOp newModule, unsigned step);
 	void unrollFirRegOp(OpBuilder &builder, seq::FirRegOp op,
-	                    ValueMapper &prevMapper, ValueMapper &currMapper, unsigned step);
+                        ValueMapper &prevMapper, ValueMapper &currMapper, unsigned step);
+
+private:
+	bool isClockPort(const StringRef &portName);
 };
 } // namespace
 
+
+bool EquivFusionTemporalUnrollPass::isClockPort(const StringRef &portName) {
+	return portName == "clk" || portName == "clock" ||
+		   portName == "CLK" || portName == "CLOCK";
+}
 
 LogicalResult EquivFusionTemporalUnrollPass::unrollModule(OpBuilder &builder, hw::HWModuleOp module) {
 	// Step 1: Create new module
@@ -56,6 +64,8 @@ hw::HWModuleOp EquivFusionTemporalUnrollPass::createUnrollModule(OpBuilder &buil
 	SmallVector<hw::PortInfo> newPorts;
 	for (unsigned step = 0; step < timeSteps; ++step) {
 		for (const auto &port : moduleType.getPorts()) {
+			if (isClockPort(port.name)) continue;  // skip clock port
+
 			std::string newPortName = port.name.str() + "_" + std::to_string(step);
 			newPorts.push_back({builder.getStringAttr(newPortName), port.type, port.dir});
 		}
@@ -72,7 +82,7 @@ hw::HWModuleOp EquivFusionTemporalUnrollPass::createUnrollModule(OpBuilder &buil
 }
 
 LogicalResult EquivFusionTemporalUnrollPass::creatUnrollModuleBody(OpBuilder &builder, hw::HWModuleOp module,
-																	hw::HWModuleOp newModule) {
+                                                                   hw::HWModuleOp newModule) {
 	Block *newBlock = newModule.getBodyBlock();
 	builder.setInsertionPointToEnd(newBlock);
 
@@ -80,14 +90,15 @@ LogicalResult EquivFusionTemporalUnrollPass::creatUnrollModuleBody(OpBuilder &bu
 	ValueMapper prevMapper(&bb);
 	ValueMapper currMapper(&bb);
 
-	initialRegistersResult(builder, module, currMapper);
+	initialRegistersResult(builder, currMapper, module);
 
 	SmallVector<Value> newOutputValues;;
 	Block *oldBlock = module.getBodyBlock();
 	for (unsigned step = 0; step < timeSteps; ++step) {
-		prepareStepMapper(module, newModule, prevMapper, currMapper, step);
+		prevMapper = currMapper;
+		prepareStepMapper(builder, currMapper, module, newModule, step);
 
-		for (auto &op : oldBlock->getOperations()) {
+		module->walk([&](Operation *op) {
 			if (auto outputOp = dyn_cast<hw::OutputOp>(op)) {
 				// OutputOp: collecting output values
 				for (auto output : outputOp.getOperands())
@@ -111,8 +122,8 @@ LogicalResult EquivFusionTemporalUnrollPass::creatUnrollModuleBody(OpBuilder &bu
 	return success();
 }
 
-void EquivFusionTemporalUnrollPass::initialRegistersResult(OpBuilder &builder, hw::HWModuleOp module,
-                                                             ValueMapper &currMapper) {
+void EquivFusionTemporalUnrollPass::initialRegistersResult(OpBuilder &builder, ValueMapper &currMapper,
+                                                           hw::HWModuleOp module) {
 	// TODO(taomengxia): initial register result with zero
 	Block *oldBlock = module.getBodyBlock();
 	for (auto &op : oldBlock->getOperations()) {
@@ -123,44 +134,55 @@ void EquivFusionTemporalUnrollPass::initialRegistersResult(OpBuilder &builder, h
 	}
 }
 
-void EquivFusionTemporalUnrollPass::prepareStepMapper(hw::HWModuleOp module, hw::HWModuleOp newModule,
-                                                      ValueMapper &prevMapper, ValueMapper& currMapper, unsigned step) {
-	prevMapper = currMapper;
-
-	Block *oldBody = module.getBodyBlock();
+void EquivFusionTemporalUnrollPass::prepareStepMapper(OpBuilder &builder, ValueMapper& currMapper,
+                                                      hw::HWModuleOp module, hw::HWModuleOp newModule,
+                                                      unsigned step) {
+	Block *body = module.getBodyBlock();
 	Block *newBody = newModule.getBodyBlock();
+    auto moduleType = module.getModuleType();
 
-	auto oldArgumentsSize = oldBody->getArguments().size();
-	for (unsigned argIdx = 0; argIdx < oldArgumentsSize; ++argIdx) {
-		Value oldArgValue = oldBody->getArgument(argIdx);
-		Value newArgValue = newBody->getArgument(argIdx + step * oldArgumentsSize);
-		currMapper.set(oldArgValue, newArgValue);
+	unsigned newArgIdx = 0;
+	for (unsigned argIdx = 0; argIdx < body->getNumArguments(); ++argIdx) {
+		Value oldArg = body->getArgument(argIdx);
+
+		auto pId = moduleType.getPortIdForInputId(argIdx);
+		auto portName = moduleType.getPortName(pId);
+		Value newArg;
+		if (isClockPort(portName)) {
+			newArg = hw::ConstantOp::create(builder, oldArg.getLoc(), oldArg.getType(), step % 2);
+		} else {
+			newArg = newBody->getArgument(newArgIdx++);
+		}
+		currMapper.set(oldArg, newArg);
  	}
+	assert(newArgIdx * timeSteps == newBody->getNumArguments());
 }
 
-void EquivFusionTemporalUnrollPass::unrollFirRegOp(OpBuilder &builder, seq::FirRegOp op,
+void EquivFusionTemporalUnrollPass::unrollFirRegOp(OpBuilder &builder, seq::FirRegOp regOp,
                                                    ValueMapper &prevMapper, ValueMapper& currMapper, unsigned step) {
 	// TODO (taomengxia): reset value
-	auto next = op.getNext();
-	auto clk = op.getClk();
-	auto result = op.getResult();
-	Value currResult;
+	Location loc = regOp.getLoc();
+	auto next = regOp.getNext();
+	auto clk = regOp.getClk();
+	auto result = regOp.getResult();
 
+	auto prevResult = prevMapper.get(result);
+
+	Value currResult;
 	if (step == 0) {
 		// TODO(taomengxia): initial value
 		// currResult = initial value
-		currResult = prevMapper.get(result);
+		currResult = prevResult;
 	} else {
 		// currResult = (!prevClk && currClk) ? currNext : prevResult
-		auto constOne = hw::ConstantOp::create(builder, op.getLoc(), builder.getI1Type(), 1);
-		auto prevClk = seq::FromClockOp::create(builder, op.getLoc(), prevMapper.get(clk));
-		auto notPrevClk = comb::XorOp::create(builder, op.getLoc(), prevClk, constOne);
-		auto currClk = seq::FromClockOp::create(builder, op.getLoc(), currMapper.get(clk));
-		auto clockEdge = comb::AndOp::create(builder, op.getLoc(), notPrevClk, currClk);
+		auto constOne = hw::ConstantOp::create(builder, loc, builder.getI1Type(), 1);
+		auto prevClk = seq::FromClockOp::create(builder, loc, prevMapper.get(clk));
+		auto notPrevClk = comb::XorOp::create(builder, loc, prevClk, constOne);
+		auto currClk = seq::FromClockOp::create(builder, loc, currMapper.get(clk));
+		auto clockEdge = comb::AndOp::create(builder, loc, notPrevClk, currClk);
 
-		auto prevResult = prevMapper.get(result);
 		auto currNext = currMapper.get(next);
-		currResult = comb::MuxOp::create(builder, op.getLoc(), clockEdge, currNext, prevResult);
+		currResult = comb::MuxOp::create(builder, loc, clockEdge, currNext, prevResult);
 	}
 	currMapper.set(result, currResult);
 }
