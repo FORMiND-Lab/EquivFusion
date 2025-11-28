@@ -21,6 +21,9 @@ private:
 
     mlir::OwningOpRef<mlir::ModuleOp> mergedModuleOp_;
     std::unique_ptr<mlir::MLIRContext> globalContext_;
+
+    std::set<std::string> inputPorts_;
+    std::set<std::string> outputPorts_;
     
     EquivFusionManager() = default;
     ~EquivFusionManager() = default;
@@ -34,17 +37,22 @@ public:
     static EquivFusionManager *getInstance();
 
     void setSpecModuleOp(mlir::OwningOpRef<mlir::ModuleOp> &module);
-    mlir::ModuleOp getSpecModuleOp();
+    mlir::ModuleOp getSpecModuleOp() const;
     void setImplModuleOp(mlir::OwningOpRef<mlir::ModuleOp> &module);
-    mlir::ModuleOp getImplModuleOp();
+    mlir::ModuleOp getImplModuleOp() const;
 
     void setMergedModuleOp(mlir::OwningOpRef<mlir::ModuleOp> &module);
-    mlir::ModuleOp getMergedModuleOp();
+    mlir::ModuleOp getMergedModuleOp() const;
     mlir::MLIRContext* getGlobalContext();
 
     void setModuleOp(mlir::OwningOpRef<mlir::ModuleOp> &module, ModuleType moduleType);
     mlir::ModuleOp getModuleOp(ModuleType moduleType);
 
+    void addInputPorts(const std::vector<std::string>& ports);
+    void addOutputPorts(const std::vector<std::string>& ports);
+    void clearPorts();
+    std::set<std::string> getInputPorts() const;
+    std::set<std::string> getOutputPorts() const;
 };
 
 XUANSONG_NAMESPACE_HEADER_END

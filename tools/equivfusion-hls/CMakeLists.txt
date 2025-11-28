@@ -21,9 +21,11 @@ target_link_libraries(equivfusion-hls
   MLIRTransforms
   MLIRSCFToControlFlow
   MLIRAffineToStandard
+  MLIRAffineTransforms
 
   FuncToHWModule
   EquivFusionRemoveRedundantFunc
+  EquivFusionMemrefHLS
 )
 
 target_include_directories(equivfusion-hls PUBLIC ${INCLUDE_DIRS})

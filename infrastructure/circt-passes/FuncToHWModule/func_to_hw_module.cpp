@@ -1,12 +1,18 @@
 #include "circt-passes/FuncToHWModule/Passes.h"
 #include "circt/Dialect/HW/HWOps.h"
+#include "circt/Dialect/HW/HWTypes.h"
 #include "circt/Dialect/Comb/CombOps.h"
+
 #include "mlir/Dialect/Func/IR/FuncOps.h"
 #include "mlir/Dialect/ControlFlow/IR/ControlFlowOps.h"
 #include "mlir/IR/Builders.h"
 #include "mlir/IR/IRMapping.h"
 #include "mlir/IR/Matchers.h"
+#include "mlir/Dialect/MemRef/IR/MemRef.h"
+#include "mlir/IR/Types.h"
+
 #include "llvm/ADT/STLExtras.h"
+#include "llvm/ADT/DenseMap.h"
 #include "llvm/ADT/PostOrderIterator.h"
 #include "llvm/Support/Casting.h"
 
@@ -98,18 +104,35 @@ struct CFRemover {
   mlir::DominanceInfo domInfo;
 };
 
+struct ArrayInfo{
+  mlir::Type elementType;
+  unsigned int size;
+  llvm::DenseMap<unsigned int, mlir::Value> indexToValueMap;
+};
 
+// This pass restricts that:
+// 1. All memrefs in the funcOp must be one-dimensional.
+// 2. Arguments with the "equivfusion.direction" attribute set to "out" must have memref type.
 struct FuncToHWModulePass : public circt::impl::FuncToHWModuleBase<FuncToHWModulePass> {
     using circt::impl::FuncToHWModuleBase<FuncToHWModulePass>::FuncToHWModuleBase;
 
     void runOnOperation() override;
 private:
 
-    circt::hw::HWModuleOp
-    buildHWModuleOPFromFuncOP(mlir::OpBuilder &builder, mlir::func::FuncOp funcOp);
+    mlir::Value createArrayFromArrayInfo(mlir::OpBuilder &builder, ArrayInfo &info);
+
+    mlir::FailureOr<circt::hw::ArrayType> 
+    createArrayTypeFromMemRefType(mlir::OpBuilder &builder, mlir::MemRefType memRefType);
+
+    mlir::FailureOr<circt::hw::HWModuleOp>
+    buildHWModuleOpFromFuncOp(mlir::OpBuilder &builder, mlir::func::FuncOp funcOp, 
+        llvm::DenseMap<mlir::Value, unsigned int> &funcParamInToModuleInIndexMap,
+        llvm::DenseMap<mlir::Value, unsigned int> &funcParamOutToModuleOutIndexMap);
 
     mlir::LogicalResult
-    copyOpFromFuncToHWModule(mlir::OpBuilder &builder, mlir::func::FuncOp funcOp, circt::hw::HWModuleOp hwModuleOp);
+    copyOpFromFuncToHWModule(mlir::OpBuilder &builder, mlir::func::FuncOp funcOp, circt::hw::HWModuleOp hwModuleOp,
+      llvm::DenseMap<mlir::Value, unsigned int> &funcParamInToModuleInIndexMap,
+      llvm::DenseMap<mlir::Value, unsigned int> &funcParamOutToModuleOutIndexMap);
 
     mlir::LogicalResult convertFuncToHWModule(mlir::func::FuncOp funcOp);
 
@@ -181,7 +204,8 @@ CFRemover::run() {
           visitedBlocks.insert(ipoBlock);
           sortedBlocks.push_back(ipoBlock);
         }
-    
+        
+        /*
         // Give up if there are any side-effecting ops in the region.
         for (auto &op : block) {
           if (!mlir::isMemoryEffectFree(&op)) {
@@ -189,6 +213,7 @@ CFRemover::run() {
             return mlir::failure();
           }
         }
+        */
     
         // Check that we know what to do with all terminators.
         if (!llvm::isa<mlir::func::ReturnOp, mlir::cf::BranchOp, mlir::cf::CondBranchOp>(block.getTerminator())) {
@@ -346,8 +371,48 @@ CFRemover::run() {
     return mlir::success();
 }
 
-circt::hw::HWModuleOp 
-FuncToHWModulePass::buildHWModuleOPFromFuncOP(mlir::OpBuilder &builder, mlir::func::FuncOp funcOp) { 
+mlir::Value FuncToHWModulePass::createArrayFromArrayInfo(mlir::OpBuilder &builder, ArrayInfo &info) {
+  auto constantZeroOp = builder.create<circt::hw::ConstantOp>(builder.getUnknownLoc(), info.elementType, 0);
+  mlir::Value zeroVal = constantZeroOp.getResult();
+
+  llvm::SmallVector<mlir::Value> elements;
+  elements.resize(info.size);
+  for (unsigned int i = 0; i < info.size; i++) {
+    elements[i] = info.indexToValueMap.count(i) ? info.indexToValueMap[i] : zeroVal;
+  }
+
+  circt::hw::ArrayType arrayType = circt::hw::ArrayType::get(info.elementType, info.size);
+  auto createArrayOp = builder.create<circt::hw::ArrayCreateOp>(builder.getUnknownLoc(), arrayType, elements);
+  return createArrayOp.getResult();
+}
+
+// Convert a memref type to hw.array type.
+// Returns failure if:
+// - memref has dynamic dimensions
+// - memref has more than 1 dimensions
+mlir::FailureOr<circt::hw::ArrayType>
+FuncToHWModulePass::createArrayTypeFromMemRefType(mlir::OpBuilder &builder, mlir::MemRefType memRefType) {
+  if (!memRefType.hasStaticShape()) {
+    llvm::errs() << "The memref type is not a static shape.\n";
+    return mlir::failure();
+  }
+
+  unsigned int rank = memRefType.getRank();
+  if (rank > 1) {
+    llvm::errs() << "The memref type has more than 1 dimension.\n";
+    return mlir::failure();
+  }
+
+  mlir::Type elementType = memRefType.getElementType();
+  unsigned int size = rank == 0 ? 1 : memRefType.getDimSize(0);
+
+  return circt::hw::ArrayType::get(elementType, size);
+}
+
+mlir::FailureOr<circt::hw::HWModuleOp> 
+FuncToHWModulePass::buildHWModuleOpFromFuncOp(mlir::OpBuilder &builder, mlir::func::FuncOp funcOp,
+  llvm::DenseMap<mlir::Value, unsigned int> &funcParamInToModuleInIndexMap,
+  llvm::DenseMap<mlir::Value, unsigned int> &funcParamOutToModuleOutIndexMap) { 
     builder.setInsertionPointAfter(funcOp);
     mlir::Location loc = funcOp.getLoc();
     llvm::StringRef name = funcOp.getSymName();
@@ -357,131 +422,363 @@ FuncToHWModulePass::buildHWModuleOPFromFuncOP(mlir::OpBuilder &builder, mlir::fu
 
     // Get portInfo used by the builder to create hw.module
     mlir::SmallVector<circt::hw::PortInfo> inputsInfo, outputsInfo;
-    for (auto [idx, inputType] : llvm::enumerate(argumentTypes)) {
-        // get the name of input
-        std::string inputName;
-        if (argAttrs && idx < argAttrs->size()) {
-            mlir::Attribute argAttr = (*argAttrs)[idx];
-            mlir::DictionaryAttr dictAttr = llvm::dyn_cast_or_null<mlir::DictionaryAttr>(argAttr);
-            if (dictAttr) {
-                if (mlir::StringAttr nameAttr = dictAttr.getAs<mlir::StringAttr>("polygeist.param_name")) { 
-                    inputName = nameAttr.getValue().str();
-                }
-            }
+    for (auto [idx, argType] : llvm::enumerate(argumentTypes)) {
+      std::string argName;
+      std::string direction;
+
+      if (argAttrs && idx < argAttrs->size()) {
+        mlir::Attribute argAttr = (*argAttrs)[idx];
+        mlir::DictionaryAttr dictAttr = llvm::dyn_cast_or_null<mlir::DictionaryAttr>(argAttr);
+        if (dictAttr) {
+          if (mlir::StringAttr nameAttr = dictAttr.getAs<mlir::StringAttr>("polygeist.param_name")) { 
+            argName = nameAttr.getValue().str();
+          }
+          if (mlir::StringAttr directionAttr = dictAttr.getAs<mlir::StringAttr>("equivfusion.direction")) {
+             direction = directionAttr.getValue().str();
+          }
         }
+      }
 
-        if (inputName.empty()) {
-            inputName = "in_" + std::to_string(idx);
+      bool isOut = direction == "out";
+      if (argName.empty()) {
+        argName = "arg_" + std::to_string(idx);
+      }
+      mlir::Type type = argType;
+        
+      if (llvm::isa<mlir::MemRefType>(type)) {
+        mlir::FailureOr<circt::hw::ArrayType> typeOrFailure = createArrayTypeFromMemRefType(builder, llvm::dyn_cast<mlir::MemRefType>(type));
+        if (mlir::failed(typeOrFailure)) {
+          return mlir::failure();
         }
+        type = *typeOrFailure;
+      } else {
+        if (isOut) {
+          llvm::errs() << "The output argument in parameter list of '" << name.str() << "' must be a pointer.\n";
+          return mlir::failure();
+        }
+      }
+        
+      circt::hw::PortInfo argInfo;
+      argInfo.name = builder.getStringAttr(argName);
+      argInfo.dir = isOut ? circt::hw::ModulePort::Direction::Output : circt::hw::ModulePort::Direction::Input;
+      argInfo.type = type;
 
-        circt::hw::PortInfo inputInfo;
-        inputInfo.name = builder.getStringAttr(inputName);
-        inputInfo.dir = circt::hw::ModulePort::Direction::Input;
-        inputInfo.type = inputType;
-        inputInfo.argNum = idx;
-
-        inputsInfo.push_back(inputInfo);
+      // argNum represents the index of the port within input or output ports, counted separately for inputs and outputs
+      if (isOut) {
+        argInfo.argNum = outputsInfo.size();
+        funcParamOutToModuleOutIndexMap[funcOp.getArgument(idx)] = argInfo.argNum;
+        outputsInfo.push_back(argInfo);
+      } else {
+        argInfo.argNum = inputsInfo.size();
+        funcParamInToModuleInIndexMap[funcOp.getArgument(idx)] = argInfo.argNum;
+        inputsInfo.push_back(argInfo);
+      }
     }
 
     for (auto [idx, outputType] : llvm::enumerate(resultTypes)) {
-        std::string outputName = "out_" + std::to_string(idx);
-        circt::hw::PortInfo outputInfo;
-        outputInfo.name = builder.getStringAttr(outputName);
-        outputInfo.dir = circt::hw::ModulePort::Direction::Output;
-        outputInfo.type = outputType;
-        outputInfo.argNum = idx;
+      std::string outputName = "out_" + std::to_string(outputsInfo.size());
+      mlir::Type type = outputType;
+      if (llvm::isa<mlir::MemRefType>(type)) {
+        mlir::FailureOr<circt::hw::ArrayType> typeOrFailure = createArrayTypeFromMemRefType(builder, llvm::dyn_cast<mlir::MemRefType>(type));
+        if (mlir::failed(typeOrFailure)) {
+          return mlir::failure();
+        }
+        type = *typeOrFailure;
+      }
 
-        outputsInfo.push_back(outputInfo);
+      circt::hw::PortInfo outputInfo;
+      outputInfo.name = builder.getStringAttr(outputName);
+      outputInfo.dir = circt::hw::ModulePort::Direction::Output;
+      outputInfo.type = type;
+      outputInfo.argNum = outputsInfo.size();
+
+      outputsInfo.push_back(outputInfo);
     }
 
     circt::hw::ModulePortInfo portInfo(inputsInfo, outputsInfo);
     
     // Create the hw.module operation
     auto hwModule = circt::hw::HWModuleOp::create(
-        builder,                           // OpBuilder
-        loc,                              // Location
-        builder.getStringAttr(name),      // Module name
-        portInfo,                         // Port information
-        {},                               // Parameters (empty)
-        {},                               // Attributes (empty)
-        {},                               // Comment (empty)
-        false                              // shouldEnsureTerminator
+      builder,                           // OpBuilder
+      loc,                              // Location
+      builder.getStringAttr(name),      // Module name
+      portInfo,                         // Port information
+      {},                               // Parameters (empty)
+      {},                               // Attributes (empty)
+      {},                               // Comment (empty)
+      false                              // shouldEnsureTerminator
     );
 
     return hwModule;
 }
 
 mlir::LogicalResult
-FuncToHWModulePass::copyOpFromFuncToHWModule(mlir::OpBuilder &builder, mlir::func::FuncOp funcOp, circt::hw::HWModuleOp hwModuleOp) {
-    // Get the bofy block of the hw.module
-    builder.setInsertionPoint(hwModuleOp.getBodyBlock(), hwModuleOp.getBodyBlock()->begin());
+FuncToHWModulePass::copyOpFromFuncToHWModule(mlir::OpBuilder &builder, mlir::func::FuncOp funcOp, circt::hw::HWModuleOp hwModuleOp,
+    llvm::DenseMap<mlir::Value, unsigned int> &funcParamInToModuleInIndexMap,
+    llvm::DenseMap<mlir::Value, unsigned int> &funcParamOutToModuleOutIndexMap) {
+  // Get the body block of the hw.module
+  builder.setInsertionPoint(hwModuleOp.getBodyBlock(), hwModuleOp.getBodyBlock()->begin());
+  mlir::IRMapping valueMapping;
+  llvm::SmallVector<mlir::Value> returnOpMappedValues;
+  llvm::SmallVector<mlir::Value> outputValues;
+  llvm::DenseMap<mlir::Value, ArrayInfo> memrefToArrayInfoMap;
+  llvm::DenseMap<mlir::Value, mlir::Value> memrefToArrayMap;
 
-    mlir::Block &funcOpBody = funcOp.getBody().front();
-    size_t moduleInPortNum = hwModuleOp.getNumInputPorts();
-    llvm::SmallVector<mlir::Value> moduleInPortValues;
-
-    // Get the values of the input ports of the hw.module
-    for (size_t i = 0; i < moduleInPortNum; ++i) {
-        moduleInPortValues.push_back(hwModuleOp.getArgumentForInput(i));
+  for (auto it : funcParamInToModuleInIndexMap) {
+    valueMapping.map(it.first, hwModuleOp.getArgumentForInput(it.second));
+    if (llvm::isa<mlir::MemRefType>(it.first.getType())) {
+      memrefToArrayMap[it.first] = hwModuleOp.getArgumentForInput(it.second);
     }
+  }
 
-    mlir::IRMapping valueMapping;
-    
-    // Ensure the number of arguments in the function body is equal to the number of input ports in the hw.module//
-    if (funcOpBody.getNumArguments() != moduleInPortNum) { 
-        llvm::errs() << "The number of arguments in the function body is not equal to the number of input ports in the hw.module\n";
-        return mlir::failure();
-    } 
-
-    for (auto [idx, funcArg] : llvm::enumerate(funcOpBody.getArguments())) {
-        mlir::BlockArgument hwInArg = hwModuleOp.getArgumentForInput(idx);
-        valueMapping.map(funcArg, hwInArg);
+  for (auto it : funcParamOutToModuleOutIndexMap) {
+    if (llvm::isa<mlir::MemRefType>(it.first.getType())) {
+      ArrayInfo info;
+      mlir::MemRefType memrefType = llvm::dyn_cast<mlir::MemRefType>(it.first.getType());
+      info.elementType = memrefType.getElementType();
+      info.size = memrefType.getRank() == 0 ? 1 : memrefType.getDimSize(0);
+      memrefToArrayInfoMap[it.first] = info;
+    } else {
+      llvm::errs() << "The output argument in parameter list of '" << funcOp.getSymName().str() << "' must be a pointer.\n";
+      return mlir::failure();
     }
+  }
 
-    // Clone operations from func to hw.module. 
-    for (auto& op : llvm::make_early_inc_range(funcOpBody.getOperations())) {
-        if (auto returnOp = mlir::dyn_cast<mlir::func::ReturnOp>(op)) {
-            // Create hw.output operation for the return values.
-            llvm::SmallVector<mlir::Value> outputValues;
-            for (mlir::Value returnValue : returnOp.getOperands()) {
-                auto mappedValue = valueMapping.lookupOrNull(returnValue);
-                if (!mappedValue) { 
-                    llvm::errs() << "The return value " << returnValue << " is used before definition\n";
-                    return mlir::failure();
-                }
+  // Clone operations from func to hw.module. 
+  for (auto& op : llvm::make_early_inc_range(funcOp.getBody().front().getOperations())) {
+    if (auto returnOp = mlir::dyn_cast<mlir::func::ReturnOp>(op)) {
+      // Create hw.output operation for the return values.
+      for (mlir::Value returnValue : returnOp.getOperands()) {
+        mlir::Value mappedValue;
 
-                outputValues.push_back(mappedValue);
-            }
-
-            builder.create<circt::hw::OutputOp>(op.getLoc(), outputValues);
-            continue;
+        if (llvm::isa<mlir::MemRefType>(returnValue.getType())) {
+          if (funcParamInToModuleInIndexMap.count(returnValue)) { 
+            mappedValue = hwModuleOp.getArgumentForInput(funcParamInToModuleInIndexMap[returnValue]);
+          } else if (memrefToArrayInfoMap.count(returnValue)) {
+            mappedValue = createArrayFromArrayInfo(builder, memrefToArrayInfoMap[returnValue]);
+          } else {
+            llvm::errs() << "The return value is used before definition.\n";
+            return mlir::failure();
+          }
+        } else {
+          mappedValue = valueMapping.lookupOrNull(returnValue);
+          if (!mappedValue) { 
+            llvm::errs() << "The return value " << returnValue << " is used before definition\n";
+            return mlir::failure();
+          }
         }
 
-        mlir::Operation* clonedOp = builder.clone(op, valueMapping);
-        if (!clonedOp) {
-          llvm::errs() << "Failed to clone operation " << op << "\n";
+        returnOpMappedValues.push_back(mappedValue);
+      }
+
+      continue;
+    }
+
+    if (auto loadOp = mlir::dyn_cast<mlir::memref::LoadOp>(op)) {
+      if (memrefToArrayMap.count(loadOp.getMemref())) {
+        circt::hw::ArrayType arrayType = llvm::dyn_cast<circt::hw::ArrayType>(memrefToArrayMap[loadOp.getMemref()].getType());
+        mlir::Type resultType = arrayType.getElementType();
+
+        mlir::Value index;
+        if (loadOp.getIndices().empty()) {
+          auto constZeroOp = builder.create<circt::hw::ConstantOp>(loadOp.getLoc(), builder.getI32Type(), 0);
+          index = constZeroOp.getResult();
+        } else {
+          index = valueMapping.lookupOrNull(loadOp.getIndices().front());
+        }
+        
+        if (!index) {
+          llvm::errs() << "The index of the memref.load operation is used before definition.\n";
           return mlir::failure();
         }
-         
-        for (auto [originalResult, clonedResult] : 
-            llvm::zip(op.getResults(), clonedOp->getResults())) {
-            valueMapping.map(originalResult, clonedResult);
+
+        auto constOp = index.getDefiningOp<circt::hw::ConstantOp>();
+        if (!constOp) { 
+          llvm::errs() << "The index of the memref.load operation is not a constant.\n";
+          return mlir::failure();
         }
+
+        // Adjust index bitwidth to match array size requirement
+        // hw.array_get requires: index_bitwidth = ceil(log2(array_size))
+        size_t arraySize = arrayType.getNumElements();
+        unsigned requiredIdxWidth = (arraySize <= 1) ? 1 : llvm::Log2_64_Ceil(arraySize);
+        
+        mlir::Value adjustedIndex = index;
+        if (mlir::IntegerType indexIntType = llvm::dyn_cast<mlir::IntegerType>(index.getType())) {
+          unsigned currentWidth = indexIntType.getWidth();
+          
+          // If current index bitwidth doesn't match the requirement, adjust it
+          if (currentWidth != requiredIdxWidth) {
+            mlir::Location loc = loadOp.getLoc();
+            mlir::Type targetIndexType = builder.getIntegerType(requiredIdxWidth);
+            
+            if (currentWidth > requiredIdxWidth) {
+              // Index is too wide, truncate by extracting lower bits
+              // Example: i32 -> i3, extract lower 3 bits
+              adjustedIndex = builder.create<circt::comb::ExtractOp>(
+                loc, targetIndexType, index, 0
+              );
+            } else {
+              // Index is too narrow, zero-extend by padding high bits
+              // Example: i2 -> i3, pad 1 bit of zero at high position
+              mlir::Value zeroPad = builder.create<circt::hw::ConstantOp>(
+                loc,
+                builder.getIntegerType(requiredIdxWidth - currentWidth),
+                0
+              );
+              // Concatenate: {high zeros, original index} to form new index
+              adjustedIndex = builder.create<circt::comb::ConcatOp>(
+                loc, zeroPad, index
+              );
+            }
+          }
+        } else {
+          loadOp.emitError("Index must be integer type");
+          return mlir::failure();
+        }
+
+        auto resultOp = builder.create<circt::hw::ArrayGetOp>(loadOp.getLoc(), resultType, memrefToArrayMap[loadOp.getMemref()], adjustedIndex);
+        valueMapping.map(loadOp.getResult(), resultOp.getResult());
+      } else if (funcParamOutToModuleOutIndexMap.count(loadOp.getMemref())) {
+        llvm::errs() << "The memref which is an output parameter is used by memref.load.\n";
+        return mlir::failure();
+      } else {
+        llvm::errs() << "The memref is used before definition.\n";
+        return mlir::failure();
+      }
+
+      continue;
     }
 
-    
-    return mlir::success();
+    if (auto storeOp = mlir::dyn_cast<mlir::memref::StoreOp>(op)) {
+      if (memrefToArrayInfoMap.count(storeOp.getMemref())) {
+        ArrayInfo &info = memrefToArrayInfoMap[storeOp.getMemref()];
+        mlir::Value value = valueMapping.lookupOrNull(storeOp.getValue());
+        mlir::Value indexVal;
+        llvm::APInt index;
+        unsigned int idx;
+
+        if (storeOp.getIndices().empty()) {
+          auto constZeroOp = builder.create<circt::hw::ConstantOp>(storeOp.getLoc(), builder.getI32Type(), 0);
+          indexVal = constZeroOp.getResult();
+        } else {
+          indexVal = valueMapping.lookupOrNull(storeOp.getIndices().front());
+        }
+
+        if (!value) {
+          llvm::errs() << "The value of the memref.store operation is used before definition.\n";
+          return mlir::failure();
+        }
+
+        if (!indexVal) {
+          llvm::errs() << "The index of the memref.store operation is used before definition.\n";
+          return mlir::failure();
+        }
+
+        if (auto constOp = indexVal.getDefiningOp<circt::hw::ConstantOp>()) {
+          index = constOp.getValue();
+          idx = index.getZExtValue();
+          info.indexToValueMap[idx] = value;
+        } else {
+          llvm::errs() << "The index of the memref.store operation is not a constant.\n";
+          return mlir::failure();
+        }
+      } else if (funcParamInToModuleInIndexMap.count(storeOp.getMemref())) {
+        llvm::errs() << "The memref which is an input parameter is used by memref.store.\n";
+        return mlir::failure();
+      } else {
+        llvm::errs() << "The memref is used before definition.\n";
+        return mlir::failure();
+      }
+
+      continue;
+    }
+
+    if (auto allocOp = mlir::dyn_cast<mlir::memref::AllocOp>(op)) { 
+      mlir::Value resultValue = allocOp.getResult();
+      mlir::MemRefType memRefType = llvm::dyn_cast<mlir::MemRefType>(resultValue.getType());
+      
+      mlir::FailureOr<circt::hw::ArrayType> arrayType = createArrayTypeFromMemRefType(builder, memRefType);
+      if (mlir::failed(arrayType)) {
+        return mlir::failure();
+      }
+
+      ArrayInfo arrayInfo;
+      arrayInfo.size = (*arrayType).getNumElements();
+      arrayInfo.elementType = (*arrayType).getElementType();
+      memrefToArrayInfoMap[resultValue] = arrayInfo;
+      
+      mlir::Value arrayValue = createArrayFromArrayInfo(builder, arrayInfo);
+      memrefToArrayMap[resultValue] = arrayValue;
+
+      valueMapping.map(resultValue, arrayValue);
+
+      continue;
+    }
+
+    if (auto allocaOp = mlir::dyn_cast<mlir::memref::AllocaOp>(op)) {
+      mlir::Value resultValue = allocaOp.getResult();
+      mlir::MemRefType memRefType = llvm::dyn_cast<mlir::MemRefType>(resultValue.getType());
+
+      mlir::FailureOr<circt::hw::ArrayType> arrayType = createArrayTypeFromMemRefType(builder, memRefType);
+      if (mlir::failed(arrayType)) {
+        return mlir::failure();
+      }
+      
+      ArrayInfo arrayInfo;
+      arrayInfo.size = (*arrayType).getNumElements();
+      arrayInfo.elementType = (*arrayType).getElementType();
+      memrefToArrayInfoMap[resultValue] = arrayInfo;
+
+      mlir::Value arrayValue = createArrayFromArrayInfo(builder, arrayInfo);
+      memrefToArrayMap[resultValue] = arrayValue;
+
+      valueMapping.map(resultValue, arrayValue);
+
+      continue;
+    }
+
+    mlir::Operation* clonedOp = builder.clone(op, valueMapping);
+    if (!clonedOp) {
+      llvm::errs() << "Failed to clone operation " << op << "\n";
+      return mlir::failure();
+    }
+         
+    for (auto [originalResult, clonedResult] : 
+      llvm::zip(op.getResults(), clonedOp->getResults())) {
+      valueMapping.map(originalResult, clonedResult);
+    }
+  }
+
+  outputValues.resize(funcParamOutToModuleOutIndexMap.size());
+  for (auto it : funcParamOutToModuleOutIndexMap) {
+    outputValues[it.second] = createArrayFromArrayInfo(builder, memrefToArrayInfoMap[it.first]);
+  }
+
+  for (auto value : returnOpMappedValues) {
+    outputValues.push_back(value);
+  }
+  builder.setInsertionPoint(hwModuleOp.getBodyBlock(), hwModuleOp.getBodyBlock()->end());
+  builder.create<circt::hw::OutputOp>(hwModuleOp.getLoc(), outputValues);
+
+  return mlir::success();
 }
 
 mlir::LogicalResult FuncToHWModulePass::convertFuncToHWModule(mlir::func::FuncOp funcOp) {
     mlir::OpBuilder builder(funcOp.getContext());
-    circt::hw::HWModuleOp hwModuleOp = buildHWModuleOPFromFuncOP(builder, funcOp);
-    
-    if (failed(copyOpFromFuncToHWModule(builder, funcOp, hwModuleOp))) {
+    llvm::DenseMap<mlir::Value, unsigned int> funcParamInToModuleInIndexMap;
+    llvm::DenseMap<mlir::Value, unsigned int> funcParamOutToModuleOutIndexMap;
+
+    auto hwModuleOpOrFailure = buildHWModuleOpFromFuncOp(builder, funcOp, funcParamInToModuleInIndexMap, funcParamOutToModuleOutIndexMap);
+    if (mlir::failed(hwModuleOpOrFailure)) {
+      return mlir::failure();
+    }
+
+    if (mlir::failed(copyOpFromFuncToHWModule(builder, funcOp, *hwModuleOpOrFailure, 
+        funcParamInToModuleInIndexMap, funcParamOutToModuleOutIndexMap))) {
         return mlir::failure();
     }
     
-
     return mlir::success();
 }
 
