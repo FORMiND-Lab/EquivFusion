@@ -337,6 +337,26 @@ bool ReadVCommand::parseOptions(const std::vector<std::string>& args, ReadVComma
         return false;
     }
 
+    for (auto &inputFile : opts.inputFiles) {
+        Utils::PathUtil::expandTilde(inputFile);
+    }
+
+    for (auto &includeDir : opts.includeDirs) {
+        Utils::PathUtil::expandTilde(includeDir);
+    }
+
+    for (auto &includeSystemDir : opts.includeSystemDirs) {
+        Utils::PathUtil::expandTilde(includeSystemDir);
+    }
+
+    for (auto &libraryFile : opts.libraryFiles) {
+        Utils::PathUtil::expandTilde(libraryFile);
+    }
+
+    for (auto &libDir : opts.libDirs) {
+        Utils::PathUtil::expandTilde(libDir);
+    }
+
     if (opts.spec && opts.impl) {
         log("Command 'read_v' Failed:\n");
         log("   --spec and --impl cannot be specified at the same time!\n");

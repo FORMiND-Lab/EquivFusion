@@ -10,7 +10,13 @@ def FuncToHWModule : Pass<"func-to-hw-module", "mlir::ModuleOp"> {
         This Pass converts operation 'func.func' to 'hw.module'.
     }];
 
-    let dependentDialects = ["mlir::func::FuncDialect", "circt::hw::HWDialect", "mlir::cf::ControlFlowDialect", "circt::comb::CombDialect"];
+    let dependentDialects = [
+        "mlir::func::FuncDialect", 
+        "circt::hw::HWDialect", 
+        "mlir::cf::ControlFlowDialect", 
+        "circt::comb::CombDialect",
+        "mlir::memref::MemRefDialect"
+    ];
 }
 
 #endif // EQUIVFUSION_FUNC_TO_HW_MODULE_PASSES_TD

@@ -17,6 +17,7 @@
 #include "mlir/Transforms/GreedyPatternRewriteDriver.h"
 #include "mlir/Transforms/Passes.h"
 #include "mlir/Conversion/Passes.h"
+#include "mlir/Dialect/Affine/Passes.h"
 
 #include "llvm/Support/CommandLine.h"
 #include "llvm/Support/InitLLVM.h"
@@ -33,6 +34,7 @@
 
 #include "circt-passes/FuncToHWModule/Passes.h"
 #include "circt-passes/RemoveRedundantFunc/Passes.h"
+#include "circt-passes/MemrefHLS/Passes.h"
 
 namespace cl = llvm::cl;
 
@@ -52,6 +54,12 @@ static cl::opt<std::string> topFunctionName("top", cl::desc("Top function name")
    cl::value_desc("function name"),
    cl::init(""),
    cl::cat(mainCategory));
+
+static cl::list<std::string> inputPorts("input-ports", cl::desc("Input ports"), 
+   cl::cat(mainCategory), cl::value_desc("port name"));
+
+static cl::list<std::string> outputPorts("output-ports", cl::desc("Output ports"), 
+   cl::cat(mainCategory), cl::value_desc("port name"));
 
 static llvm::LogicalResult 
 processInput(mlir::MLIRContext &context, mlir::TimingScope &ts, 
@@ -87,13 +95,28 @@ processInput(mlir::MLIRContext &context, mlir::TimingScope &ts,
         pm.addPass(circt::createEquivFusionRemoveRedundantFuncPass(options));
     }
 
+    // Set direction of arguments for func.func.
+    circt::EquivFusionSetFuncArgDirectionPassOptions options;
+    options.inputPorts = llvm::SmallVector<std::string>(inputPorts.begin(), inputPorts.end());
+    options.outputPorts = llvm::SmallVector<std::string>(outputPorts.begin(), outputPorts.end());
+    pm.addNestedPass<mlir::func::FuncOp>(circt::createEquivFusionSetFuncArgDirectionPass(options));
+
     // Unroll affine loops.
     pm.addPass(mlir::createCanonicalizerPass());
     pm.addNestedPass<mlir::func::FuncOp>(mlir::affine::createLoopUnrollPass(-1, false, true, nullptr));
     
+    // Replace affine memref accesses by scalars by forwarding stores to loads and eliminating redundant loads.
+    pm.addPass(mlir::createCanonicalizerPass());
+    pm.addNestedPass<mlir::func::FuncOp>(mlir::affine::createAffineScalarReplacementPass());
+
     // Lower affine to a conbination of Arith and
     pm.addPass(mlir::createCanonicalizerPass());
     pm.addPass(mlir::createLowerAffinePass());
+
+    pm.enableVerifier(false);
+    // Convert all index typed values to an i32 integer.
+    pm.addPass(mlir::createCanonicalizerPass());
+    pm.addNestedPass<mlir::func::FuncOp>(circt::createEquivFusionConvertIndexToI32Pass());
 
     // Lower Scf to ControlFlow dialect.
     pm.addPass(mlir::createCanonicalizerPass());

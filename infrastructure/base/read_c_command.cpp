@@ -7,6 +7,7 @@
 #include "llvm/Support/LogicalResult.h"
 #include "llvm/Support/MemoryBuffer.h"
 #include "llvm/Support/FileUtilities.h"
+#include "llvm/ADT/SmallVector.h"
 
 #include "mlir/Support/FileUtilities.h"
 #include "mlir/Parser/Parser.h"
@@ -27,6 +28,7 @@
 #include "mlir/Transforms/GreedyPatternRewriteDriver.h"
 #include "mlir/Transforms/Passes.h"
 #include "mlir/Conversion/Passes.h"
+#include "mlir/Dialect/Affine/Passes.h"
 
 #include "circt/Conversion/Passes.h"
 #include "circt/Dialect/Seq/SeqDialect.h"
@@ -35,6 +37,7 @@
 
 #include "circt-passes/FuncToHWModule/Passes.h"
 #include "circt-passes/RemoveRedundantFunc/Passes.h"
+#include "circt-passes/MemrefHLS/Passes.h"
 
 XUANSONG_NAMESPACE_HEADER_START
 
@@ -73,9 +76,11 @@ struct ReadCCommand : public Command {
 
         if (llvm::failed(executeCFlow(opts))) {
             logError("Command 'read_c' Failed!\n");
+            EquivFusionManager::getInstance()->clearPorts();
             return;
         }
 
+        EquivFusionManager::getInstance()->clearPorts();
         return;
     }
 
@@ -117,6 +122,8 @@ bool ReadCCommand::parseOptions(const std::vector<std::string>& args, ReadCComma
         log("   Inputfile is required!\n");
         return false;
     }
+
+    Utils::PathUtil::expandTilde(opts.inputFile);
 
     if (opts.spec && opts.impl) {
         log("Command 'read_c' Failed:\n");
@@ -166,13 +173,31 @@ llvm::LogicalResult ReadCCommand::executeHLS(const ReadCCommandOptions& opts) {
         pm.addPass(circt::createEquivFusionRemoveRedundantFuncPass(options));
     }
 
+    // Set direction of arguments for func.func.
+    circt::EquivFusionSetFuncArgDirectionPassOptions options;
+    std::set<std::string> inputPorts = EquivFusionManager::getInstance()->getInputPorts();
+    std::set<std::string> outputPorts = EquivFusionManager::getInstance()->getOutputPorts();
+
+    options.inputPorts = llvm::SmallVector<std::string>(inputPorts.begin(), inputPorts.end());
+    options.outputPorts = llvm::SmallVector<std::string>(outputPorts.begin(), outputPorts.end());
+    pm.addNestedPass<mlir::func::FuncOp>(circt::createEquivFusionSetFuncArgDirectionPass(options));
+
     // Unroll affine loops.
     pm.addPass(mlir::createCanonicalizerPass());
     pm.addNestedPass<mlir::func::FuncOp>(mlir::affine::createLoopUnrollPass(-1, false, true, nullptr));
-    
+
+    // Replace affine memref accesses by scalars by forwarding stores to loads and eliminating redundant loads.
+    pm.addPass(mlir::createCanonicalizerPass());
+    pm.addNestedPass<mlir::func::FuncOp>(mlir::affine::createAffineScalarReplacementPass());
+
     // Lower affine to a conbination of Arith and
     pm.addPass(mlir::createCanonicalizerPass());
     pm.addPass(mlir::createLowerAffinePass());
+
+    pm.enableVerifier(false);
+    // Convert all index typed values to an i32 integer.
+    pm.addPass(mlir::createCanonicalizerPass());
+    pm.addNestedPass<mlir::func::FuncOp>(circt::createEquivFusionConvertIndexToI32Pass());
 
     // Lower Scf to ControlFlow dialect.
     pm.addPass(mlir::createCanonicalizerPass());

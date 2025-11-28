@@ -32,20 +32,20 @@ EquivFusionManager *EquivFusionManager::getInstance() {
 void EquivFusionManager::setSpecModuleOp(mlir::OwningOpRef<mlir::ModuleOp> &module) {
     specModuleOp_ = std::move(module);
 }
-mlir::ModuleOp EquivFusionManager::getSpecModuleOp() {
+mlir::ModuleOp EquivFusionManager::getSpecModuleOp() const {
     return specModuleOp_ ? specModuleOp_.get() : nullptr;
 }
 void EquivFusionManager::setImplModuleOp(mlir::OwningOpRef<mlir::ModuleOp> &module) {
     implModuleOp_ = std::move(module);
 }
-mlir::ModuleOp EquivFusionManager::getImplModuleOp() {
+mlir::ModuleOp EquivFusionManager::getImplModuleOp() const {
     return implModuleOp_ ? implModuleOp_.get() : nullptr;
 }
 
 void EquivFusionManager::setMergedModuleOp(mlir::OwningOpRef<mlir::ModuleOp> &module) {
     mergedModuleOp_ = std::move(module);
 }
-mlir::ModuleOp EquivFusionManager::getMergedModuleOp() {
+mlir::ModuleOp EquivFusionManager::getMergedModuleOp() const {
     return mergedModuleOp_ ? mergedModuleOp_.get() : nullptr;
 }
 
@@ -106,6 +106,27 @@ mlir::MLIRContext* EquivFusionManager::getGlobalContext() {
         globalContext_->allowUnregisteredDialects();
     }
     return globalContext_.get();
+}
+
+void EquivFusionManager::addInputPorts(const std::vector<std::string>& ports) {
+    inputPorts_.insert(ports.begin(), ports.end());
+}
+
+void EquivFusionManager::addOutputPorts(const std::vector<std::string>& ports) {
+    outputPorts_.insert(ports.begin(), ports.end());
+}
+
+void EquivFusionManager::clearPorts() {
+    inputPorts_.clear();
+    outputPorts_.clear();
+}
+
+std::set<std::string> EquivFusionManager::getInputPorts() const {
+    return inputPorts_;
+}
+
+std::set<std::string> EquivFusionManager::getOutputPorts() const {
+    return outputPorts_;
 }
 
 XUANSONG_NAMESPACE_HEADER_END

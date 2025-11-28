@@ -47,6 +47,7 @@ target_link_libraries(base
     FuncToHWModule
     EquivFusionRemoveRedundantFunc
     EquivFusionConvertCaseToLogicalComparison
+    EquivFusionMemrefHLS
 
     EquivFusionPassTemporalUnroll
 
