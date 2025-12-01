@@ -160,7 +160,21 @@ std::pair<hw::HWModuleOp, Value> EquivFusionMiterPass::createTopModule(OpBuilder
     for (unsigned i = 0; i < outputNum; ++i) {
         Value o1 = instanceA.getResult(i);
         Value o2 = instanceB.getResult(i);
-        outputsEqual.emplace_back(builder.create<comb::ICmpOp>(loc, comb::ICmpPredicate::eq, o1, o2));
+
+        if (circt::hw::ArrayType arrayType = llvm::dyn_cast<circt::hw::ArrayType>(o1.getType())) {
+            size_t arraySize = arrayType.getNumElements();
+            unsigned indexWidth = llvm::Log2_64_Ceil(arraySize);
+
+            for (unsigned j = 0; j < arraySize; ++j) {
+                Value index = builder.create<hw::ConstantOp>(loc, builder.getIntegerType(indexWidth), j);
+                Value element1 = builder.create<hw::ArrayGetOp>(loc, arrayType.getElementType(), o1, index);
+                Value element2 = builder.create<hw::ArrayGetOp>(loc, arrayType.getElementType(), o2, index);
+                outputsEqual.emplace_back(builder.create<comb::ICmpOp>(loc, comb::ICmpPredicate::eq, element1, element2));
+            }
+
+        } else {
+            outputsEqual.emplace_back(builder.create<comb::ICmpOp>(loc, comb::ICmpPredicate::eq, o1, o2));
+        }
     }
     
     Value equal;
