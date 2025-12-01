@@ -35,6 +35,8 @@ private:
     static bool mergeModules(mlir::ModuleOp dest, mlir::ModuleOp src, EquivMiterToolOptions& opts, DesignTypeEnum designType);
 
 private:
+    static void populatePreparePasses(mlir::PassManager& pm);
+
     static llvm::LogicalResult miterToSMT(mlir::PassManager& pm, mlir::ModuleOp module, llvm::raw_ostream& os,
                                           const circt::EquivFusionMiterOptions& miterOpts);
     static llvm::LogicalResult miterToAIGER(mlir::PassManager& pm, mlir::ModuleOp module, llvm::raw_ostream& os,

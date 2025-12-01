@@ -95,7 +95,7 @@ void EquivFusionMiterPass::constructMiterForSMTLIB(OpBuilder& builder, Location 
 void EquivFusionMiterPass::constructMiterForAIGER(OpBuilder& builder, Location loc,
                                                   hw::HWModuleOp moduleA,
                                                   hw::HWModuleOp moduleB) {
-	/// Create topModule.
+    /// Create topModule.
     auto [topModule, outputsEq] = createTopModule(builder, loc, moduleA, moduleB);
 
     /// Construct neq
@@ -110,10 +110,10 @@ void EquivFusionMiterPass::constructMiterForAIGER(OpBuilder& builder, Location l
 void EquivFusionMiterPass::constructMiterForBTOR2(OpBuilder& builder, Location loc,
                                                   hw::HWModuleOp moduleA,
                                                   hw::HWModuleOp moduleB) {
-	/// Create topModule.
+    /// Create topModule.
     auto [topModule, outputsEq] = createTopModule(builder, loc, moduleA, moduleB);
 
-	/// Construct verif assert.
+    /// Construct verif assert.
     builder.create<verif::AssertOp>(loc, outputsEq, Value{}, StringAttr{});
 
     auto *term = topModule.getBodyBlock()->getTerminator();
