@@ -8,6 +8,8 @@
 #include "circt/Dialect/OM/OMPasses.h"              // createStripOMPass                CIRCTOMTransforms
 #include "circt/Dialect/Emit/EmitPasses.h"          // createStripEmitPass              CIRCTEmitTransforms
 #include "circt/Dialect/HW/HWPasses.h"              // createFlattenModules             CIRCTHWTransforms
+#include "circt-passes/FlattenIOArray/Passes.h"     // createEquivFusionFlattenIOArray  EquivFusionFlattenIOArray
+
 #include "circt-passes/Miter/Passes.h"              // createEquivFusionMiter           EquivFusionPassEquivMiter
 #include "circt/Conversion/HWToSMT.h"               // createConvertHWToSMT             CIRCTHWToSMT
 #include "circt/Conversion/CombToSMT.h"             // createConvertCombToSMT           CIRCTCombToSMT
@@ -122,6 +124,8 @@ bool EquivMiterTool::run(const std::vector<std::string>& args) {
 
     EquivFusionMiterOptions miterOpts = {opts.specModuleName, opts.implModuleName, opts.miterMode};
     PassManager pm(context);
+    populatePreparePasses(pm);
+
     switch (opts.miterMode) {
     case EquivFusionMiter::MiterModeEnum::SMTLIB:
         result = miterToSMT(pm, module.get(), outputFile.value()->os(), miterOpts);
@@ -150,11 +154,25 @@ bool EquivMiterTool::run(const std::vector<std::string>& args) {
     return true;
 }
 
-llvm::LogicalResult EquivMiterTool::miterToSMT(mlir::PassManager& pm, mlir::ModuleOp module, llvm::raw_ostream& os,
-                                               const EquivFusionMiterOptions& miterOpts) {
+void EquivMiterTool::populatePreparePasses(mlir::PassManager& pm) {
     pm.addPass(om::createStripOMPass());
     pm.addPass(emit::createStripEmitPass());
+
+    /// Inlines Private HW modules
     pm.addPass(hw::createFlattenModules());
+
+    /// Module Port array => integer
+    pm.addPass(createEquivFusionFlattenIOArray());
+
+    /// Aggregate Operations tp Comb operations
+    pm.nest<hw::HWModuleOp>().addPass(hw::createHWAggregateToComb());
+
+    /// Simplify
+    pm.addPass(createSimpleCanonicalizerPass());
+}
+
+llvm::LogicalResult EquivMiterTool::miterToSMT(mlir::PassManager& pm, mlir::ModuleOp module, llvm::raw_ostream& os,
+                                               const EquivFusionMiterOptions& miterOpts) {
     pm.addPass(createEquivFusionMiter(miterOpts));
 
     pm.addPass(circt::createConvertHWToSMT());
@@ -200,7 +218,7 @@ LogicalResult EquivMiterTool::miterToBTOR2(mlir::PassManager& pm, mlir::ModuleOp
 
     pm.addPass(createConvertHWToBTOR2Pass(os));
 
-    return pm.run(module);   
+    return pm.run(module);
 }
 
 bool EquivMiterTool::parseOptions(const std::vector<std::string> &args, EquivMiterToolOptions& opts) {

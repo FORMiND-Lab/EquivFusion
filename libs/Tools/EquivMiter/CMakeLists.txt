@@ -6,6 +6,7 @@ target_link_libraries(EquivFusionToolEquivMiter
     CIRCTOMTransforms
     CIRCTEmitTransforms
     CIRCTHWTransforms
+    EquivFusionFlattenIOArray
     EquivFusionPassEquivMiter
     CIRCTHWToSMT
     CIRCTCombToSMT
