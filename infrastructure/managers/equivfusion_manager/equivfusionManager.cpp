@@ -129,5 +129,17 @@ std::set<std::string> EquivFusionManager::getOutputPorts() const {
     return outputPorts_;
 }
 
+void EquivFusionManager::configureIRPrinting(mlir::PassManager &pm, bool enable) {
+    if (enable) {
+        pm.enableIRPrinting(
+                /*shouldPrintBeforePass=*/[](...) { return false; },
+                /*shouldPrintAfterPass=*/[](...) { return true; },
+                /*printModuleScope=*/false,
+                /*printAfterOnlyOnChange=*/false,
+                /*printAfterOnlyOnFailure=*/false
+        );
+    }
+}
+
 XUANSONG_NAMESPACE_HEADER_END
 

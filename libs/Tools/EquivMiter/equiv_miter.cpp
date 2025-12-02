@@ -124,6 +124,8 @@ bool EquivMiterTool::run(const std::vector<std::string>& args) {
 
     EquivFusionMiterOptions miterOpts = {opts.specModuleName, opts.implModuleName, opts.miterMode};
     PassManager pm(context);
+    EquivFusionManager::getInstance()->configureIRPrinting(pm, opts.printIR);
+
     populatePreparePasses(pm);
 
     switch (opts.miterMode) {
@@ -224,7 +226,9 @@ LogicalResult EquivMiterTool::miterToBTOR2(mlir::PassManager& pm, mlir::ModuleOp
 bool EquivMiterTool::parseOptions(const std::vector<std::string> &args, EquivMiterToolOptions& opts) {
     for (size_t idx = 0; idx < args.size(); idx++) {
         auto arg = args[idx];
-        if ((arg == "-specModule" || arg == "--specModule") && idx + 1 < args.size()) {
+        if (arg == "--print-ir" || arg == "-print-ir") {
+            opts.printIR = true;
+        } else if ((arg == "-specModule" || arg == "--specModule") && idx + 1 < args.size()) {
             opts.specModuleName = args[++idx];
         } else if ((arg == "-implModule" || arg == "--implModule") && idx + 1 < args.size()) {
             opts.implModuleName = args[++idx];
@@ -244,7 +248,7 @@ bool EquivMiterTool::parseOptions(const std::vector<std::string> &args, EquivMit
                 return false;
             }
         }
-    }    
+    }
 
     if (opts.specModuleName.empty() || opts.implModuleName.empty()) {
         log("Both --specModule and --implModule must be specified.\n");
@@ -259,6 +263,7 @@ void EquivMiterTool::help(const std::string& name, const std::string& descriptio
     log("   OVERVIEW: %s - %s\n", name.c_str(), description.c_str());;
     log("   USAGE:    %s <--specModule name> <--implModule name> [options]\n", name.c_str());
     log("   OPTIONS:\n");
+    log("       --print-ir ----------------------------- Print IR after pass\n");
     log("       --specModule <module name> ------------- Specify a named module for the specification circuit\n");
     log("       --implModule <module name> ------------- Specify a named module for the implementation circuit\n");
     log("       --mitermode ---------------------------- MiterMode [smtlib, aiger, btor2], default is smtlib\n");

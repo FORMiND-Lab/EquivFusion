@@ -3,8 +3,6 @@
 #include "circt/Dialect/HW/HWOps.h"
 #include "mlir/Transforms/DialectConversion.h"
 
-#include <iostream>
-
 using namespace circt;
 using namespace hw;
 

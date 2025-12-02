@@ -19,11 +19,12 @@ enum struct DesignTypeEnum {
 };
 
 struct EquivMiterToolOptions {
+    bool printIR {false};
+    circt::EquivFusionMiter::MiterModeEnum miterMode {circt::EquivFusionMiter::MiterModeEnum::SMTLIB};
     std::string specModuleName;
     std::string implModuleName;
     std::vector<std::string> inputFilenames;
     std::string outputFilename {"-"};
-    circt::EquivFusionMiter::MiterModeEnum miterMode {circt::EquivFusionMiter::MiterModeEnum::SMTLIB};
 };
 
 class EquivMiterTool {
