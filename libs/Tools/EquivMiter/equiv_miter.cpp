@@ -8,7 +8,7 @@
 #include "circt/Dialect/OM/OMPasses.h"              // createStripOMPass                CIRCTOMTransforms
 #include "circt/Dialect/Emit/EmitPasses.h"          // createStripEmitPass              CIRCTEmitTransforms
 #include "circt/Dialect/HW/HWPasses.h"              // createFlattenModules             CIRCTHWTransforms
-#include "circt-passes/FlattenIOArray/Passes.h"     // createEquivFusionFlattenIOArray  EquivFusionFlattenIOArray
+#include "circt-passes/FlattenIOArray/Passes.h"     // createEquivFusionFlattenIOArray  EquivFusionPassFlattenIOArray
 
 #include "circt-passes/Miter/Passes.h"              // createEquivFusionMiter           EquivFusionPassEquivMiter
 #include "circt/Conversion/HWToSMT.h"               // createConvertHWToSMT             CIRCTHWToSMT
@@ -17,10 +17,11 @@
 #include "circt/Support/Passes.h"                   // createSimpleCanonicalizerPass    CIRCTSupport
 #include "mlir/Target/SMTLIB/ExportSMTLIB.h"        // exportSMTLIB                     MLIRExportSMTLIB
 
-#include "circt/Conversion/CombToSynth.h"             // createConvertCombToAIG           CIRCTCombToAIG
-#include "circt/Dialect/Synth/Transforms/SynthPasses.h"           // createLowerVariadic              CIRCTAIGTransforms
-#include "circt/Conversion/ExportAIGER.h"           // exportAIGER                      CIRCTExportAIGER
+#include "circt/Conversion/CombToSynth.h"                   // createConvertCombToAIG   CIRCTCombToAIG
+#include "circt/Dialect/Synth/Transforms/SynthPasses.h"     // createLowerVariadic      CIRCTAIGTransforms
+#include "circt/Conversion/ExportAIGER.h"                   // exportAIGER              CIRCTExportAIGER
 
+#include "circt-passes/ReplicateToConcat/Passes.h"  // createEquivFusionReplicateToConcat EquivFusionPassReplicateToConcat
 #include "circt-passes/DecomposeConcat/Passes.h"    // createEquivFusionDecomposeConcat EquivFusionPassDecomposeConcat
 #include "circt/Dialect/Arc/ArcPasses.h"            // createSimplifyVariadicOpsPass    CIRCTArcTransforms
 #include "circt/Conversion/HWToBTOR2.h"             // createConvertHWToBTOR2Pass       CIRCTHWToBTOR2
@@ -215,7 +216,12 @@ LogicalResult EquivMiterTool::miterToBTOR2(mlir::PassManager& pm, mlir::ModuleOp
     pm.addPass(createEquivFusionMiter(miterOpts));
 
     pm.addPass(hw::createFlattenModules());
+
+    // [Temp fix]: comb.replicate unsupported in ConvertHWToBTOR2, replace with comb.concat
+    pm.addPass(createEquivFusionReplicateToConcat());
+    // [Temp fix]: variadic comb.concat unsupported in ConvertHWToBTOR2, replace with binary comb.concat
     pm.addPass(createEquivFusionDecomposeConcat());
+    // variadic op unsupported in ConvertHWToBTOR2, replace with binary op
     pm.addPass(arc::createSimplifyVariadicOpsPass());
 
     pm.addPass(createConvertHWToBTOR2Pass(os));

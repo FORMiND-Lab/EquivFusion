@@ -49,10 +49,6 @@ struct ConcatOpConversion : OpRewritePattern<comb::ConcatOp> {
 
 } // namespace
 
-static void populateDecomposeConcatPatterns(RewritePatternSet &patterns) {
-  patterns.add<ConcatOpConversion>(patterns.getContext());
-}
-
 //===----------------------------------------------------------------------===//
 // Decompose Concat pass
 //===----------------------------------------------------------------------===//
@@ -67,7 +63,7 @@ struct EquivFusionDecomposeConcatPass
 
 void EquivFusionDecomposeConcatPass::runOnOperation() {
     RewritePatternSet patterns(&getContext());
-    populateDecomposeConcatPatterns(patterns);
+    patterns.add<ConcatOpConversion>(patterns.getContext());
     mlir::FrozenRewritePatternSet frozen(std::move(patterns));
 
     if (failed(mlir::applyPatternsGreedily(getOperation(), frozen)))
