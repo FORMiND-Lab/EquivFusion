@@ -48,6 +48,7 @@ XUANSONG_NAMESPACE_HEADER_START
 namespace {
 
 struct ReadVCommandOptions {
+    bool printIR = false;
     bool spec = false;
     bool impl = false;
     bool allowUseBeforeDeclare = false;
@@ -128,6 +129,7 @@ struct ReadVCommand : public Command {
         log("   OVERVIEW: %s - %s\n", getName().c_str(), getDescription().c_str());
         log("   USAGE:    read_v [options] <--spec | --impl> <inputFiles>\n");
         log("   OPTIONS:\n");
+        log("       --print-ir --------------------------------- Print IR after pass\n");
         log("       --top <topModuleName> ---------------------- Specify top module name\n");
         log("       --spec ------------------------------------- Design is specification\n");
         log("       --impl ------------------------------------- Design is implementation\n");
@@ -245,7 +247,9 @@ bool ReadVCommand::parseOptions(const std::vector<std::string>& args, ReadVComma
     mlir::ModuleOp implModule = EquivFusionManager::getInstance()->getImplModuleOp();
 
     for (size_t argidx = 0; argidx < args.size(); argidx++) {
-        if ((args[argidx] == "--top" || args[argidx] == "-top") && argidx + 1 < args.size()) {
+        if (args[argidx] == "--print-ir" || args[argidx] == "-print-ir") {
+            opts.printIR = true;
+        } else if ((args[argidx] == "--top" || args[argidx] == "-top") && argidx + 1 < args.size()) {
             opts.topModuleName = args[++argidx];
         } else if ((args[argidx] == "--spec" || args[argidx] == "-spec")) {
             opts.spec = true;
@@ -433,6 +437,7 @@ llvm::LogicalResult ReadVCommand::executeRTLFlow(const ReadVCommandOptions& opts
     mlir::PassManager pm(context);
     pm.enableVerifier(true);
     pm.enableTiming(ts);
+    EquivFusionManager::getInstance()->configureIRPrinting(pm, opts.printIR);
 
     populateMooreTransforms(pm);
     populateMooreToCoreLowering(pm);

@@ -27,10 +27,18 @@ struct EquivFusionMiterPass
 
 private:
     hw::HWModuleOp lookupModule(StringRef name);
-    void constructMiter(OpBuilder& builder, Location loc, hw::HWModuleOp moduleA, hw::HWModuleOp moduleB);
-    void constructMiterForSMTLIB(OpBuilder& builder, Location loc, hw::HWModuleOp moduleA, hw::HWModuleOp moduleB);
-    void constructMiterForAIGER(OpBuilder& builder, Location loc, hw::HWModuleOp moduleA, hw::HWModuleOp moudleB);
-    void constructMiterForBTOR2(OpBuilder& builder, Location loc, hw::HWModuleOp moduleA, hw::HWModuleOp moduleB);
+
+    llvm::LogicalResult
+    constructMiter(OpBuilder &builder, Location loc, hw::HWModuleOp moduleA, hw::HWModuleOp moduleB);
+
+    llvm::LogicalResult
+    constructMiterForSMTLIB(OpBuilder &builder, Location loc, hw::HWModuleOp moduleA, hw::HWModuleOp moduleB);
+
+    llvm::LogicalResult
+    constructMiterForAIGER(OpBuilder &builder, Location loc, hw::HWModuleOp moduleA, hw::HWModuleOp moduleB);
+
+    llvm::LogicalResult
+    constructMiterForBTOR2(OpBuilder &builder, Location loc, hw::HWModuleOp moduleA, hw::HWModuleOp moduleB);
 
     std::pair<hw::HWModuleOp, Value> createTopModule(OpBuilder& builder, Location loc,
                                                      hw::HWModuleOp moduleA, hw::HWModuleOp moduleB);
@@ -39,7 +47,7 @@ private:
 
 hw::HWModuleOp EquivFusionMiterPass::lookupModule(StringRef name) {
     Operation *expectedModule = SymbolTable::lookupNearestSymbolFrom(
-        getOperation(), StringAttr::get(&getContext(), name));
+            getOperation(), StringAttr::get(&getContext(), name));
     if (!expectedModule || !isa<hw::HWModuleOp>(expectedModule)) {
         getOperation().emitError("module named '") << name << "' not found";
         return {};
@@ -47,25 +55,24 @@ hw::HWModuleOp EquivFusionMiterPass::lookupModule(StringRef name) {
     return cast<hw::HWModuleOp>(expectedModule);
 }
 
-void EquivFusionMiterPass::constructMiter(OpBuilder& builder, Location loc,
-                                          hw::HWModuleOp moduleA,
-                                          hw::HWModuleOp moduleB) {
+llvm::LogicalResult EquivFusionMiterPass::constructMiter(OpBuilder &builder, Location loc,
+                                                         hw::HWModuleOp moduleA,
+                                                         hw::HWModuleOp moduleB) {
     switch (miterMode) {
         case EquivFusionMiter::MiterModeEnum::SMTLIB:
-            constructMiterForSMTLIB(builder, loc, moduleA, moduleB);
-            break;
+            return constructMiterForSMTLIB(builder, loc, moduleA, moduleB);
         case EquivFusionMiter::MiterModeEnum::AIGER:
-            constructMiterForAIGER(builder, loc, moduleA, moduleB);
-            break;
+            return constructMiterForAIGER(builder, loc, moduleA, moduleB);
         case EquivFusionMiter::MiterModeEnum::BTOR2:
-            constructMiterForBTOR2(builder, loc, moduleA, moduleB);
-            break;       
+            return constructMiterForBTOR2(builder, loc, moduleA, moduleB);
+        default:
+            return llvm::failure();
     }
 }
 
-void EquivFusionMiterPass::constructMiterForSMTLIB(OpBuilder& builder, Location loc,
-                                                   hw::HWModuleOp moduleA,
-                                                   hw::HWModuleOp moduleB) {
+llvm::LogicalResult EquivFusionMiterPass::constructMiterForSMTLIB(OpBuilder &builder, Location loc,
+                                                                  hw::HWModuleOp moduleA,
+                                                                  hw::HWModuleOp moduleB) {
     auto lecOp = builder.create<verif::LogicEquivalenceCheckingOp>(loc, false);
     builder.cloneRegionBefore(moduleA.getBody(), lecOp.getFirstCircuit(),
                               lecOp.getFirstCircuit().end());
@@ -90,13 +97,18 @@ void EquivFusionMiterPass::constructMiterForSMTLIB(OpBuilder& builder, Location 
 
     sortTopologically(&lecOp.getFirstCircuit().front());
     sortTopologically(&lecOp.getSecondCircuit().front());
+
+    return llvm::success();
 }
 
-void EquivFusionMiterPass::constructMiterForAIGER(OpBuilder& builder, Location loc,
-                                                  hw::HWModuleOp moduleA,
-                                                  hw::HWModuleOp moduleB) {
+llvm::LogicalResult EquivFusionMiterPass::constructMiterForAIGER(OpBuilder &builder, Location loc,
+                                                                 hw::HWModuleOp moduleA,
+                                                                 hw::HWModuleOp moduleB) {
     /// Create topModule.
     auto [topModule, outputsEq] = createTopModule(builder, loc, moduleA, moduleB);
+    if (!topModule) {
+        return llvm::failure();
+    }
 
     /// Construct neq
     Value zero = builder.create<hw::ConstantOp>(loc, builder.getI1Type(), 0);
@@ -104,14 +116,19 @@ void EquivFusionMiterPass::constructMiterForAIGER(OpBuilder& builder, Location l
 
     auto *term = topModule.getBodyBlock()->getTerminator();
     builder.create<hw::OutputOp>(loc, outputsNeq);
-    term->erase();    
+    term->erase();
+
+    return llvm::success();
 }
 
-void EquivFusionMiterPass::constructMiterForBTOR2(OpBuilder& builder, Location loc,
-                                                  hw::HWModuleOp moduleA,
-                                                  hw::HWModuleOp moduleB) {
+llvm::LogicalResult EquivFusionMiterPass::constructMiterForBTOR2(OpBuilder &builder, Location loc,
+                                                                 hw::HWModuleOp moduleA,
+                                                                 hw::HWModuleOp moduleB) {
     /// Create topModule.
     auto [topModule, outputsEq] = createTopModule(builder, loc, moduleA, moduleB);
+    if (!topModule) {
+        return llvm::failure();
+    }
 
     /// Construct verif assert.
     builder.create<verif::AssertOp>(loc, outputsEq, Value{}, StringAttr{});
@@ -119,14 +136,16 @@ void EquivFusionMiterPass::constructMiterForBTOR2(OpBuilder& builder, Location l
     auto *term = topModule.getBodyBlock()->getTerminator();
     builder.create<hw::OutputOp>(loc, outputsEq);
     term->erase();
+
+    return llvm::success();
 }
 
-std::pair<hw::HWModuleOp, Value> EquivFusionMiterPass::createTopModule(OpBuilder& builder, Location loc,
+std::pair<hw::HWModuleOp, Value> EquivFusionMiterPass::createTopModule(OpBuilder &builder, Location loc,
                                                                        hw::HWModuleOp moduleA,
                                                                        hw::HWModuleOp moduleB) {
     auto moduleAType = moduleA.getModuleType();
     SmallVector<hw::PortInfo> ports;
-    for (auto port : moduleAType.getPorts()) {
+    for (auto port: moduleAType.getPorts()) {
         if (port.dir == hw::ModulePort::Direction::Input) {
             ports.push_back({port.name, port.type, port.dir});
         }
@@ -136,23 +155,23 @@ std::pair<hw::HWModuleOp, Value> EquivFusionMiterPass::createTopModule(OpBuilder
                               builder.getI1Type(),
                               hw::ModulePort::Direction::Output};
     ports.push_back(miterPort);
-    
+
     /// Create topModule 
     auto topModule = builder.create<hw::HWModuleOp>(loc, builder.getStringAttr("__Top"), ports);
-    builder.setInsertionPointToStart(topModule.getBodyBlock());   
- 
-    Block *bodyBlock = topModule.getBodyBlock();
+    builder.setInsertionPointToStart(topModule.getBodyBlock());
+
+    Block * bodyBlock = topModule.getBodyBlock();
     SmallVector<Value> instanceInputs(bodyBlock->args_begin(), bodyBlock->args_end());
 
     /// Instantiate moduleA/moduleB
     auto instanceA = builder.create<hw::InstanceOp>(loc, moduleA, builder.getStringAttr("instanceA"), instanceInputs);
     auto instanceB = builder.create<hw::InstanceOp>(loc, moduleB, builder.getStringAttr("instanceB"), instanceInputs);
-    assert (instanceA.getNumResults() == instanceB.getNumResults() && 
-            "Modules must have the same number of outputs.");
+    assert(instanceA.getNumResults() == instanceB.getNumResults() &&
+           "Modules must have the same number of outputs.");
 
     /// Set private for flatten
     moduleA.setPrivate();
-    moduleB.setPrivate(); 
+    moduleB.setPrivate();
 
     /// Construct Equal
     unsigned outputNum = instanceA.getNumResults();
@@ -161,22 +180,14 @@ std::pair<hw::HWModuleOp, Value> EquivFusionMiterPass::createTopModule(OpBuilder
         Value o1 = instanceA.getResult(i);
         Value o2 = instanceB.getResult(i);
 
-        if (circt::hw::ArrayType arrayType = llvm::dyn_cast<circt::hw::ArrayType>(o1.getType())) {
-            size_t arraySize = arrayType.getNumElements();
-            unsigned indexWidth = llvm::Log2_64_Ceil(arraySize);
-
-            for (unsigned j = 0; j < arraySize; ++j) {
-                Value index = builder.create<hw::ConstantOp>(loc, builder.getIntegerType(indexWidth), j);
-                Value element1 = builder.create<hw::ArrayGetOp>(loc, arrayType.getElementType(), o1, index);
-                Value element2 = builder.create<hw::ArrayGetOp>(loc, arrayType.getElementType(), o2, index);
-                outputsEqual.emplace_back(builder.create<comb::ICmpOp>(loc, comb::ICmpPredicate::eq, element1, element2));
-            }
-
-        } else {
+        if (isHWIntegerType(o1.getType())) {
             outputsEqual.emplace_back(builder.create<comb::ICmpOp>(loc, comb::ICmpPredicate::eq, o1, o2));
+        } else {
+            moduleA.emitError("[EquivFusionMiterPass] : unsupported output type ") << o1.getType();
+            return {nullptr, nullptr};
         }
     }
-    
+
     Value equal;
     switch (outputNum) {
         case 0:
@@ -189,7 +200,7 @@ std::pair<hw::HWModuleOp, Value> EquivFusionMiterPass::createTopModule(OpBuilder
             equal = builder.create<comb::AndOp>(loc, outputsEqual, false);
             break;
     }
-   
+
     return {topModule, equal};
 }
 
@@ -207,9 +218,11 @@ void EquivFusionMiterPass::runOnOperation() {
 
     if (moduleA.getModuleType() != moduleB.getModuleType()) {
         moduleA.emitError("module's IO types don't match second modules: ")
-            << moduleA.getModuleType() << " vs " << moduleB.getModuleType();
+                << moduleA.getModuleType() << " vs " << moduleB.getModuleType();
         return signalPassFailure();
     }
 
-    constructMiter(builder, loc, moduleA, moduleB);
+    if (failed(constructMiter(builder, loc, moduleA, moduleB))) {
+        return signalPassFailure();
+    }
 }

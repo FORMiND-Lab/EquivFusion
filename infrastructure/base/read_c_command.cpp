@@ -44,6 +44,7 @@ XUANSONG_NAMESPACE_HEADER_START
 namespace {
 
 struct ReadCCommandOptions {
+    bool printIR = false;
     std::string topFunctionName = "";
     std::string inputFile = "";
     bool spec = false;
@@ -92,6 +93,7 @@ struct ReadCCommand : public Command {
         log("   OVERVIEW: %s - %s\n", getName().c_str(), getDescription().c_str());
         log("   USAGE:    read_c [options] <--spec | --impl> <inputFile>\n");
         log("   OPTIONS:\n");
+        log("       --print-ir ----------------------------- Print IR after pass\n");
         log("       --top <topFunctionName> ---------------- Specify top function name\n");
         log("       --spec --------------------------------- Design is specification\n");
         log("       --impl --------------------------------- Design is implementation\n");
@@ -105,7 +107,9 @@ bool ReadCCommand::parseOptions(const std::vector<std::string>& args, ReadCComma
     mlir::ModuleOp implModule = EquivFusionManager::getInstance()->getImplModuleOp();
         
     for (size_t argidx = 0; argidx < args.size(); argidx++) {
-        if ((args[argidx] == "--top" || args[argidx] == "-top") && argidx + 1 < args.size()) {
+        if (args[argidx] == "--print-ir" || args[argidx] == "-print-ir") {
+            opts.printIR = true;
+        } else if ((args[argidx] == "--top" || args[argidx] == "-top") && argidx + 1 < args.size()) {
             opts.topFunctionName = args[++argidx].c_str();
         } else if ((args[argidx] == "--spec" || args[argidx] == "-spec")) {
             opts.spec = true;
@@ -166,7 +170,9 @@ llvm::LogicalResult ReadCCommand::executeHLS(const ReadCCommandOptions& opts) {
         return llvm::failure();
     }
 
-    mlir::PassManager pm(&context);    
+    mlir::PassManager pm(&context);
+    EquivFusionManager::getInstance()->configureIRPrinting(pm, opts.printIR);
+
     if (!opts.topFunctionName.empty()) {
         circt::EquivFusionRemoveRedundantFuncPassOptions options;
         options.topFunc = opts.topFunctionName;

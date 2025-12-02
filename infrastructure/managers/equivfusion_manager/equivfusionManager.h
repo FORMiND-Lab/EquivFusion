@@ -2,6 +2,7 @@
 #include "mlir/IR/OwningOpRef.h"
 #include "mlir/IR/MLIRContext.h"
 #include "mlir/IR/BuiltinOps.h"
+#include "mlir/Pass/PassManager.h"
 
 XUANSONG_NAMESPACE_HEADER_START
 
@@ -53,6 +54,8 @@ public:
     void clearPorts();
     std::set<std::string> getInputPorts() const;
     std::set<std::string> getOutputPorts() const;
+
+    void configureIRPrinting(mlir::PassManager &pm, bool enable);
 };
 
 XUANSONG_NAMESPACE_HEADER_END
