@@ -1,4 +1,4 @@
-add_circt_library(EquivFusionFlattenIOArray
+add_circt_library(EquivFusionPassFlattenIOArray
     flatten_io_array.cpp
 
     DEPENDS
