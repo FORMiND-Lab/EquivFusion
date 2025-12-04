@@ -163,10 +163,10 @@ void EquivMiterTool::populatePreparePasses(mlir::PassManager& pm) {
 
     /// Inlines Private HW modules
     pm.addPass(hw::createFlattenModules());
-    /// Module Port array => integer
-    pm.addPass(circt::equivfusion::hw::createEquivFusionFlattenIOArray());
     /// [Temp fix]: hw.arary_slice unsupported in HWAggregateToComb, replace with hw.array_get + hw.array_create
     pm.addPass(circt::equivfusion::hw::createEquivFusionFlattenArraySlice());
+    /// Module Port array => integer
+    pm.addPass(circt::equivfusion::hw::createEquivFusionFlattenIOArray());
     /// Aggregate Operations tp Comb operations
     pm.nest<hw::HWModuleOp>().addPass(hw::createHWAggregateToComb());
     /// Canonicalize
