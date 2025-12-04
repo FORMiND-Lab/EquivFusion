@@ -1,11 +1,16 @@
-#include "circt-passes/ReplicateToConcat/Passes.h"
+#include "circt-passes/CombTransforms/Passes.h"
 #include "circt/Dialect/HW/HWOps.h"
 #include "circt/Dialect/Comb/CombOps.h"
 #include "mlir/Transforms/GreedyPatternRewriteDriver.h"
 
+
 namespace circt {
+namespace equivfusion {
+namespace comb {
 #define GEN_PASS_DEF_EQUIVFUSIONREPLICATETOCONCAT
-#include "circt-passes/ReplicateToConcat/Passes.h.inc"
+#include "circt-passes/CombTransforms/Passes.h.inc"
+}
+}
 } // namespace circt
 
 using namespace circt;
@@ -31,7 +36,7 @@ struct ReplicateOpConversion : OpRewritePattern<comb::ReplicateOp> {
 
 namespace {
 struct EquivFusionReplicateToConcatPass
-    : public circt::impl::EquivFusionReplicateToConcatBase<EquivFusionReplicateToConcatPass> {
+        : public circt::equivfusion::comb::impl::EquivFusionReplicateToConcatBase<EquivFusionReplicateToConcatPass> {
     void runOnOperation() override;
 };
 } // namespace

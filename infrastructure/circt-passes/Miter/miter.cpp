@@ -10,8 +10,10 @@ using namespace circt;
 using namespace hw;
 
 namespace circt {
+namespace equivfusion {
 #define GEN_PASS_DEF_EQUIVFUSIONMITER
 #include "circt-passes/Miter/Passes.h.inc"
+}
 } // namespace circt
 
 
@@ -21,8 +23,9 @@ namespace circt {
 
 namespace {
 struct EquivFusionMiterPass
-    : public circt::impl::EquivFusionMiterBase<EquivFusionMiterPass> {
-    using circt::impl::EquivFusionMiterBase<EquivFusionMiterPass>::EquivFusionMiterBase;
+        : public circt::equivfusion::impl::EquivFusionMiterBase<EquivFusionMiterPass> {
+    using circt::equivfusion::impl::EquivFusionMiterBase<EquivFusionMiterPass>::EquivFusionMiterBase;
+
     void runOnOperation() override;
 
 private:
@@ -59,11 +62,11 @@ llvm::LogicalResult EquivFusionMiterPass::constructMiter(OpBuilder &builder, Loc
                                                          hw::HWModuleOp moduleA,
                                                          hw::HWModuleOp moduleB) {
     switch (miterMode) {
-        case EquivFusionMiter::MiterModeEnum::SMTLIB:
+        case circt::equivfusion::MiterModeEnum::SMTLIB:
             return constructMiterForSMTLIB(builder, loc, moduleA, moduleB);
-        case EquivFusionMiter::MiterModeEnum::AIGER:
+        case circt::equivfusion::MiterModeEnum::AIGER:
             return constructMiterForAIGER(builder, loc, moduleA, moduleB);
-        case EquivFusionMiter::MiterModeEnum::BTOR2:
+        case circt::equivfusion::MiterModeEnum::BTOR2:
             return constructMiterForBTOR2(builder, loc, moduleA, moduleB);
         default:
             return llvm::failure();

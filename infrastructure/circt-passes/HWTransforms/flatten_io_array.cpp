@@ -1,4 +1,4 @@
-#include "circt-passes/FlattenIOArray/Passes.h"
+#include "circt-passes/HWTransforms/Passes.h"
 #include "circt/Dialect/HW/HWDialect.h"
 #include "circt/Dialect/HW/HWOps.h"
 #include "mlir/Transforms/DialectConversion.h"
@@ -7,8 +7,12 @@ using namespace circt;
 using namespace hw;
 
 namespace circt {
+namespace equivfusion {
+namespace hw {
 #define GEN_PASS_DEF_EQUIVFUSIONFLATTENIOARRAY
-#include "circt-passes/FlattenIOArray/Passes.h.inc"
+#include "circt-passes/HWTransforms/Passes.h.inc"
+}
+}
 } // namespace circt
 
 static bool isArrayType(Type type) {
@@ -65,8 +69,7 @@ struct OutputOpConversion : public OpConversionPattern<hw::OutputOp> {
 
 namespace {
 struct EquivFusionFlattenIOArrayPass
-    : public circt::impl::EquivFusionFlattenIOArrayBase<EquivFusionFlattenIOArrayPass> {
-    using circt::impl::EquivFusionFlattenIOArrayBase<EquivFusionFlattenIOArrayPass>::EquivFusionFlattenIOArrayBase;
+        : public circt::equivfusion::hw::impl::EquivFusionFlattenIOArrayBase<EquivFusionFlattenIOArrayPass> {
     void runOnOperation() override;
 };
 } // namespace

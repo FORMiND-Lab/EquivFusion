@@ -1,5 +1,0 @@
-set(LLVM_TARGET_DEFINITIONS ../../../include/circt-passes/ReplicateToConcat/Passes.td)
-mlir_tablegen(Passes.h.inc -gen-pass-decls -name EquivFusionReplicateToConcat)
-mlir_tablegen(EquivFusionReplicateToConcat.capi.h.inc -gen-pass-capi-header --prefix EquivFusionReplicateToConcat)
-mlir_tablegen(EquivFusionReplicateToConcat.capi.cpp.inc -gen-pass-capi-impl --prefix EquivFusionReplicateToConcat)
-add_public_tablegen_target(EquivFusionReplicateToConcatIncGen)
