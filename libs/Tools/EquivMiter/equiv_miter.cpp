@@ -8,9 +8,7 @@
 #include "circt/Dialect/OM/OMPasses.h"              // createStripOMPass                CIRCTOMTransforms
 #include "circt/Dialect/Emit/EmitPasses.h"          // createStripEmitPass              CIRCTEmitTransforms
 #include "circt/Dialect/HW/HWPasses.h"              // createFlattenModules             CIRCTHWTransforms
-#include "circt-passes/FlattenIOArray/Passes.h"     // createEquivFusionFlattenIOArray  EquivFusionPassFlattenIOArray
 
-#include "circt-passes/Miter/Passes.h"              // createEquivFusionMiter           EquivFusionPassEquivMiter
 #include "circt/Conversion/HWToSMT.h"               // createConvertHWToSMT             CIRCTHWToSMT
 #include "circt/Conversion/CombToSMT.h"             // createConvertCombToSMT           CIRCTCombToSMT
 #include "circt/Conversion/VerifToSMT.h"            // createConvertVerifToSMT          CIRCTVerifToSMT
@@ -21,8 +19,6 @@
 #include "circt/Dialect/Synth/Transforms/SynthPasses.h"     // createLowerVariadic      CIRCTAIGTransforms
 #include "circt/Conversion/ExportAIGER.h"                   // exportAIGER              CIRCTExportAIGER
 
-#include "circt-passes/ReplicateToConcat/Passes.h"  // createEquivFusionReplicateToConcat EquivFusionPassReplicateToConcat
-#include "circt-passes/DecomposeConcat/Passes.h"    // createEquivFusionDecomposeConcat EquivFusionPassDecomposeConcat
 #include "circt/Dialect/Arc/ArcPasses.h"            // createSimplifyVariadicOpsPass    CIRCTArcTransforms
 #include "circt/Conversion/HWToBTOR2.h"             // createConvertHWToBTOR2Pass       CIRCTHWToBTOR2
 
@@ -34,6 +30,10 @@
 #include "llvm/Support/ToolOutputFile.h"
 #include "llvm/Support/Casting.h"
 #include "llvm/Support/LogicalResult.h"
+
+#include "circt-passes/CombTransforms/Passes.h"
+#include "circt-passes/HWTransforms/Passes.h"
+#include "circt-passes/Miter/Passes.h"              // createEquivFusionMiter           EquivFusionPassEquivMiter
 
 using namespace mlir;
 using namespace circt;
@@ -123,20 +123,20 @@ bool EquivMiterTool::run(const std::vector<std::string>& args) {
         return false;
     }
 
-    EquivFusionMiterOptions miterOpts = {opts.specModuleName, opts.implModuleName, opts.miterMode};
+    circt::equivfusion::EquivFusionMiterOptions miterOpts = {opts.specModuleName, opts.implModuleName, opts.miterMode};
     PassManager pm(context);
     EquivFusionManager::getInstance()->configureIRPrinting(pm, opts.printIR);
 
     populatePreparePasses(pm);
 
     switch (opts.miterMode) {
-    case EquivFusionMiter::MiterModeEnum::SMTLIB:
+    case circt::equivfusion::MiterModeEnum::SMTLIB:
         result = miterToSMT(pm, module.get(), outputFile.value()->os(), miterOpts);
         break;
-    case EquivFusionMiter::MiterModeEnum::AIGER:
+    case circt::equivfusion::MiterModeEnum::AIGER:
         result = miterToAIGER(pm, module.get(), outputFile.value()->os(), miterOpts);
         break;
-    case EquivFusionMiter::MiterModeEnum::BTOR2:
+    case circt::equivfusion::MiterModeEnum::BTOR2:
         result = miterToBTOR2(pm, module.get(), outputFile.value()->os(), miterOpts);
         break;
     }
@@ -165,7 +165,7 @@ void EquivMiterTool::populatePreparePasses(mlir::PassManager& pm) {
     pm.addPass(hw::createFlattenModules());
 
     /// Module Port array => integer
-    pm.addPass(createEquivFusionFlattenIOArray());
+    pm.addPass(circt::equivfusion::hw::createEquivFusionFlattenIOArray());
 
     /// Aggregate Operations tp Comb operations
     pm.nest<hw::HWModuleOp>().addPass(hw::createHWAggregateToComb());
@@ -175,8 +175,8 @@ void EquivMiterTool::populatePreparePasses(mlir::PassManager& pm) {
 }
 
 llvm::LogicalResult EquivMiterTool::miterToSMT(mlir::PassManager& pm, mlir::ModuleOp module, llvm::raw_ostream& os,
-                                               const EquivFusionMiterOptions& miterOpts) {
-    pm.addPass(createEquivFusionMiter(miterOpts));
+                                               const circt::equivfusion::EquivFusionMiterOptions& miterOpts) {
+    pm.addPass(circt::equivfusion::createEquivFusionMiter(miterOpts));
 
     pm.addPass(circt::createConvertHWToSMT());
     pm.addPass(circt::createConvertCombToSMT());
@@ -190,8 +190,8 @@ llvm::LogicalResult EquivMiterTool::miterToSMT(mlir::PassManager& pm, mlir::Modu
 }
 
 llvm::LogicalResult EquivMiterTool::miterToAIGER(mlir::PassManager& pm, mlir::ModuleOp module, llvm::raw_ostream& os,
-                                                 const EquivFusionMiterOptions& miterOpts) {
-    pm.addPass(createEquivFusionMiter(miterOpts));
+                                                 const circt::equivfusion::EquivFusionMiterOptions& miterOpts) {
+    pm.addPass(circt::equivfusion::createEquivFusionMiter(miterOpts));
 
     pm.addPass(hw::createFlattenModules());
     pm.addPass(createSimpleCanonicalizerPass());
@@ -211,16 +211,16 @@ llvm::LogicalResult EquivMiterTool::miterToAIGER(mlir::PassManager& pm, mlir::Mo
     return aiger::exportAIGER(*ops.begin(), os, &exportAIGEROpts);
 }
 
-LogicalResult EquivMiterTool::miterToBTOR2(mlir::PassManager& pm, mlir::ModuleOp module, llvm::raw_ostream& os,
-                                               const EquivFusionMiterOptions& miterOpts) {
-    pm.addPass(createEquivFusionMiter(miterOpts));
+LogicalResult EquivMiterTool::miterToBTOR2(mlir::PassManager &pm, mlir::ModuleOp module, llvm::raw_ostream &os,
+                                           const circt::equivfusion::EquivFusionMiterOptions &miterOpts) {
+    pm.addPass(circt::equivfusion::createEquivFusionMiter(miterOpts));
 
-    pm.addPass(hw::createFlattenModules());
+    pm.addPass(circt::hw::createFlattenModules());
 
     // [Temp fix]: comb.replicate unsupported in ConvertHWToBTOR2, replace with comb.concat
-    pm.addPass(createEquivFusionReplicateToConcat());
+    pm.addPass(circt::equivfusion::comb::createEquivFusionReplicateToConcat());
     // [Temp fix]: variadic comb.concat unsupported in ConvertHWToBTOR2, replace with binary comb.concat
-    pm.addPass(createEquivFusionDecomposeConcat());
+    pm.addPass(circt::equivfusion::comb::createEquivFusionDecomposeConcat());
     // variadic op unsupported in ConvertHWToBTOR2, replace with binary op
     pm.addPass(arc::createSimplifyVariadicOpsPass());
 
@@ -244,11 +244,11 @@ bool EquivMiterTool::parseOptions(const std::vector<std::string> &args, EquivMit
         } else if ((arg == "-mitermode" || arg == "--mitermode") && idx + 1 < args.size()) {
             auto val = args[++idx];
             if (val == "aiger") {
-                opts.miterMode = EquivFusionMiter::MiterModeEnum::AIGER;
+                opts.miterMode = circt::equivfusion::MiterModeEnum::AIGER;
             } else if (val == "btor2") {
-                opts.miterMode = EquivFusionMiter::MiterModeEnum::BTOR2;
+                opts.miterMode = circt::equivfusion::MiterModeEnum::BTOR2;
             } else if (val == "smtlib") {
-                opts.miterMode = EquivFusionMiter::MiterModeEnum::SMTLIB;
+                opts.miterMode = circt::equivfusion::MiterModeEnum::SMTLIB;
             } else {
                 log("Wrong option value of -mitermode.\n");
                 return false;

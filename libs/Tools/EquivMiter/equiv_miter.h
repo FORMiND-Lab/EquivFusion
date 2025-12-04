@@ -20,7 +20,7 @@ enum struct DesignTypeEnum {
 
 struct EquivMiterToolOptions {
     bool printIR {false};
-    circt::EquivFusionMiter::MiterModeEnum miterMode {circt::EquivFusionMiter::MiterModeEnum::SMTLIB};
+    circt::equivfusion::MiterModeEnum miterMode {circt::equivfusion::MiterModeEnum::SMTLIB};
     std::string specModuleName;
     std::string implModuleName;
     std::vector<std::string> inputFilenames;
@@ -39,11 +39,11 @@ private:
     static void populatePreparePasses(mlir::PassManager& pm);
 
     static llvm::LogicalResult miterToSMT(mlir::PassManager& pm, mlir::ModuleOp module, llvm::raw_ostream& os,
-                                          const circt::EquivFusionMiterOptions& miterOpts);
+                                          const circt::equivfusion::EquivFusionMiterOptions& miterOpts);
     static llvm::LogicalResult miterToAIGER(mlir::PassManager& pm, mlir::ModuleOp module, llvm::raw_ostream& os,
-                                            const circt::EquivFusionMiterOptions& miterOpts);
+                                            const circt::equivfusion::EquivFusionMiterOptions& miterOpts);
     static llvm::LogicalResult miterToBTOR2(mlir::PassManager& pm, mlir::ModuleOp module, llvm::raw_ostream& os,
-                                            const circt::EquivFusionMiterOptions& miterOpts);
+                                            const circt::equivfusion::EquivFusionMiterOptions& miterOpts);
 
 public:
     static void help(const std::string& name, const std::string& description);

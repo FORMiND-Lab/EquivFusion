@@ -1,5 +1,5 @@
-#ifndef EQUIVFUSION_DECOMPOSE_CONCAT_PASSES_TD
-#define EQUIVFUSION_DECOMPOSE_CONCAT_PASSES_TD
+#ifndef EQUIVFUSION_COMB_TRANSFORMS_PASSES_TD
+#define EQUIVFUSION_COMB_TRANSFORMS_PASSES_TD
 
 include "mlir/Pass/PassBase.td"
 
@@ -25,5 +25,23 @@ def EquivFusionDecomposeConcat : Pass<"EquivFusion-decompose-concat", "::mlir::M
   let dependentDialects = ["circt::comb::CombDialect"];
 }
 
+def EquivFusionReplicateToConcat : Pass<"EquivFusion-replicate-to-concat", "::mlir::ModuleOp"> {
+    let summary = "Convert 'comb.replicate' to 'comb.concat'";
 
-#endif // EQUIVFUSION_DECOMPOSE_CONCAT_PASSES_TD
+    let description = [{
+        This Pass converts 'comb.replicate' to 'comb.concat'
+
+        ```mlir
+        %result = comb.replicate %a : (i1) -> i2
+        ```
+
+        becomes
+        ```mlir
+        %result = comb.concat %a, %a : i1, i1
+        ```
+    }];
+
+    let dependentDialects = ["circt::comb::CombDialect"];
+}
+
+#endif // EQUIVFUSION_COMB_TRANSFORMS_PASSES_TD
