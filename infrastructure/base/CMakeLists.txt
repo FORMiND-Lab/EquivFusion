@@ -21,8 +21,6 @@ target_link_libraries(base
     MLIRLLVMDialect
     MLIROptLib
     MLIRTransforms
-    MLIRSCFToControlFlow
-    MLIRAffineToStandard
 
     LLVMSupport
 
@@ -44,7 +42,6 @@ target_link_libraries(base
     EquivFusionSolverRunner
     EquivFusionToolEquivMiter
     EquivFusionWrite 
-    FuncToHWModule
     EquivFusionRemoveRedundantFunc
     EquivFusionConvertCaseToLogicalComparison
     EquivFusionMemrefHLS

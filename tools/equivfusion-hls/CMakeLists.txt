@@ -6,10 +6,8 @@ target_link_libraries(equivfusion-hls
   PRIVATE
 
   CIRCTHW
-  CIRCTHWTransforms
   CIRCTSeq
-  CIRCTSeqTransforms
-  CIRCTTransforms
+  CIRCTComb
 
   MLIRIR
   MLIRLLVMDialect
@@ -19,11 +17,8 @@ target_link_libraries(equivfusion-hls
   MLIRControlFlowDialect
   MLIRSupport
   MLIRTransforms
-  MLIRSCFToControlFlow
-  MLIRAffineToStandard
-  MLIRAffineTransforms
 
-  FuncToHWModule
+  EquivFusionUtils
   EquivFusionRemoveRedundantFunc
   EquivFusionMemrefHLS
 )
