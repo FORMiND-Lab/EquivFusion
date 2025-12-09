@@ -1,6 +1,5 @@
 #include "mlir/Dialect/Affine/IR/AffineOps.h"
 #include "mlir/Dialect/Arith/IR/Arith.h"
-#include "mlir/Dialect/Affine/Passes.h"
 #include "mlir/Dialect/ControlFlow/IR/ControlFlowOps.h"
 #include "mlir/Dialect/Func/IR/FuncOps.h"
 #include "mlir/Dialect/MemRef/IR/MemRef.h"
@@ -17,7 +16,6 @@
 #include "mlir/Transforms/GreedyPatternRewriteDriver.h"
 #include "mlir/Transforms/Passes.h"
 #include "mlir/Conversion/Passes.h"
-#include "mlir/Dialect/Affine/Passes.h"
 
 #include "llvm/Support/CommandLine.h"
 #include "llvm/Support/InitLLVM.h"
@@ -27,14 +25,14 @@
 #include "llvm/Support/LogicalResult.h"
 #include "llvm/Support/FileUtilities.h"
 
-#include "circt/Conversion/Passes.h"
 #include "circt/Dialect/Seq/SeqDialect.h"
-#include "circt/Dialect/Seq/SeqPasses.h"
-#include "circt/Transforms/Passes.h"
+#include "circt/Dialect/HW/HWOps.h"
+#include "circt/Dialect/Comb/CombDialect.h"
 
-#include "circt-passes/FuncToHWModule/Passes.h"
 #include "circt-passes/RemoveRedundantFunc/Passes.h"
 #include "circt-passes/MemrefHLS/Passes.h"
+
+#include "infrastructure/utils/hls-util/populate_hls_passes.h"
 
 namespace cl = llvm::cl;
 
@@ -101,36 +99,7 @@ processInput(mlir::MLIRContext &context, mlir::TimingScope &ts,
     options.outputPorts = llvm::SmallVector<std::string>(outputPorts.begin(), outputPorts.end());
     pm.addNestedPass<mlir::func::FuncOp>(circt::createEquivFusionSetFuncArgDirectionPass(options));
 
-    // Unroll affine loops.
-    pm.addPass(mlir::createCanonicalizerPass());
-    pm.addNestedPass<mlir::func::FuncOp>(mlir::affine::createLoopUnrollPass(-1, false, true, nullptr));
-    
-    // Replace affine memref accesses by scalars by forwarding stores to loads and eliminating redundant loads.
-    pm.addPass(mlir::createCanonicalizerPass());
-    pm.addNestedPass<mlir::func::FuncOp>(mlir::affine::createAffineScalarReplacementPass());
-
-    // Lower affine to a conbination of Arith and
-    pm.addPass(mlir::createCanonicalizerPass());
-    pm.addPass(mlir::createLowerAffinePass());
-
-    pm.enableVerifier(false);
-    // Convert all index typed values to an i32 integer.
-    pm.addPass(mlir::createCanonicalizerPass());
-    pm.addNestedPass<mlir::func::FuncOp>(circt::createEquivFusionConvertIndexToI32Pass());
-
-    // Lower Scf to ControlFlow dialect.
-    pm.addPass(mlir::createCanonicalizerPass());
-    pm.addPass(mlir::createSCFToControlFlowPass());
-
-    // Convert Arith to Comb
-    pm.addPass(mlir::createCanonicalizerPass());
-    pm.addPass(circt::createMapArithToCombPass());
-
-    //Convert Func to Module
-    pm.addPass(mlir::createCanonicalizerPass());
-    pm.addPass(circt::createFuncToHWModule());
-    
-    pm.addPass(mlir::createCanonicalizerPass());
+    XuanSong::populateHLSPasses(pm);
     
     if (mlir::failed(pm.run(module.get()))) { 
         return llvm::failure();
