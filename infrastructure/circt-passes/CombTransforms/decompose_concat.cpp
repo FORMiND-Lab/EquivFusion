@@ -28,12 +28,12 @@ static Value decomposeConcatOp(comb::ConcatOp op, OperandRange operands,
     case 1:
         return operands[0];
     case 2:
-        return rewriter.create<comb::ConcatOp>(op.getLoc(), operands[0], operands[1]);
+        return comb::ConcatOp::create(rewriter, op.getLoc(), operands[0], operands[1]);
     default:
         auto firstHalf = operands.size() / 2;
         auto lhs = decomposeConcatOp(op, operands.take_front(firstHalf), rewriter);
         auto rhs = decomposeConcatOp(op, operands.drop_front(firstHalf), rewriter);
-        return rewriter.create<comb::ConcatOp>(op.getLoc(), lhs, rhs);
+        return comb::ConcatOp::create(rewriter, op.getLoc(), lhs, rhs);
     }
     
     return Value();

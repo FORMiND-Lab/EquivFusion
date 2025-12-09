@@ -76,7 +76,7 @@ llvm::LogicalResult EquivFusionMiterPass::constructMiter(OpBuilder &builder, Loc
 llvm::LogicalResult EquivFusionMiterPass::constructMiterForSMTLIB(OpBuilder &builder, Location loc,
                                                                   hw::HWModuleOp moduleA,
                                                                   hw::HWModuleOp moduleB) {
-    auto lecOp = builder.create<verif::LogicEquivalenceCheckingOp>(loc, false);
+    auto lecOp = verif::LogicEquivalenceCheckingOp::create(builder, loc, false);
     builder.cloneRegionBefore(moduleA.getBody(), lecOp.getFirstCircuit(),
                               lecOp.getFirstCircuit().end());
     builder.cloneRegionBefore(moduleB.getBody(), lecOp.getSecondCircuit(),
@@ -90,11 +90,11 @@ llvm::LogicalResult EquivFusionMiterPass::constructMiterForSMTLIB(OpBuilder &bui
         auto *term = lecOp.getFirstCircuit().front().getTerminator();
         OpBuilder::InsertionGuard guard(builder);
         builder.setInsertionPoint(term);
-        builder.create<verif::YieldOp>(loc, term->getOperands());
+        verif::YieldOp::create(builder, loc, term->getOperands());
         term->erase();
         term = lecOp.getSecondCircuit().front().getTerminator();
         builder.setInsertionPoint(term);
-        builder.create<verif::YieldOp>(loc, term->getOperands());
+        verif::YieldOp::create(builder, loc, term->getOperands());
         term->erase();
     }
 
@@ -114,11 +114,11 @@ llvm::LogicalResult EquivFusionMiterPass::constructMiterForAIGER(OpBuilder &buil
     }
 
     /// Construct neq
-    Value zero = builder.create<hw::ConstantOp>(loc, builder.getI1Type(), 0);
-    Value outputsNeq = builder.create<comb::ICmpOp>(loc, comb::ICmpPredicate::eq, outputsEq, zero);
+    Value zero = hw::ConstantOp::create(builder, loc, builder.getI1Type(), 0);
+    Value outputsNeq = comb::ICmpOp::create(builder, loc, comb::ICmpPredicate::eq, outputsEq, zero);
 
     auto *term = topModule.getBodyBlock()->getTerminator();
-    builder.create<hw::OutputOp>(loc, outputsNeq);
+    hw::OutputOp::create(builder, loc, outputsNeq);
     term->erase();
 
     return llvm::success();
@@ -134,10 +134,10 @@ llvm::LogicalResult EquivFusionMiterPass::constructMiterForBTOR2(OpBuilder &buil
     }
 
     /// Construct verif assert.
-    builder.create<verif::AssertOp>(loc, outputsEq, Value{}, StringAttr{});
+    verif::AssertOp::create(builder, loc, outputsEq, Value{}, StringAttr{});
 
     auto *term = topModule.getBodyBlock()->getTerminator();
-    builder.create<hw::OutputOp>(loc, outputsEq);
+    hw::OutputOp::create(builder, loc, outputsEq);
     term->erase();
 
     return llvm::success();
@@ -160,15 +160,15 @@ std::pair<hw::HWModuleOp, Value> EquivFusionMiterPass::createTopModule(OpBuilder
     ports.push_back(miterPort);
 
     /// Create topModule 
-    auto topModule = builder.create<hw::HWModuleOp>(loc, builder.getStringAttr("__Top"), ports);
+    auto topModule = hw::HWModuleOp::create(builder, loc, builder.getStringAttr("__Top"), ports);
     builder.setInsertionPointToStart(topModule.getBodyBlock());
 
     Block * bodyBlock = topModule.getBodyBlock();
     SmallVector<Value> instanceInputs(bodyBlock->args_begin(), bodyBlock->args_end());
 
     /// Instantiate moduleA/moduleB
-    auto instanceA = builder.create<hw::InstanceOp>(loc, moduleA, builder.getStringAttr("instanceA"), instanceInputs);
-    auto instanceB = builder.create<hw::InstanceOp>(loc, moduleB, builder.getStringAttr("instanceB"), instanceInputs);
+    auto instanceA = hw::InstanceOp::create(builder, loc, moduleA, builder.getStringAttr("instanceA"), instanceInputs);
+    auto instanceB = hw::InstanceOp::create(builder, loc, moduleB, builder.getStringAttr("instanceB"), instanceInputs);
     assert(instanceA.getNumResults() == instanceB.getNumResults() &&
            "Modules must have the same number of outputs.");
 
@@ -184,7 +184,7 @@ std::pair<hw::HWModuleOp, Value> EquivFusionMiterPass::createTopModule(OpBuilder
         Value o2 = instanceB.getResult(i);
 
         if (isHWIntegerType(o1.getType())) {
-            outputsEqual.emplace_back(builder.create<comb::ICmpOp>(loc, comb::ICmpPredicate::eq, o1, o2));
+            outputsEqual.emplace_back(comb::ICmpOp::create(builder, loc, comb::ICmpPredicate::eq, o1, o2));
         } else {
             moduleA.emitError("[EquivFusionMiterPass] : unsupported output type ") << o1.getType();
             return {nullptr, nullptr};
@@ -194,13 +194,13 @@ std::pair<hw::HWModuleOp, Value> EquivFusionMiterPass::createTopModule(OpBuilder
     Value equal;
     switch (outputNum) {
         case 0:
-            equal = builder.create<hw::ConstantOp>(loc, builder.getI1Type(), 1);
+            equal = hw::ConstantOp::create(builder, loc, builder.getI1Type(), 1);
             break;
         case 1:
             equal = outputsEqual[0];
             break;
         default:
-            equal = builder.create<comb::AndOp>(loc, outputsEqual, false);
+            equal = comb::AndOp::create(builder, loc, outputsEqual, false);
             break;
     }
 

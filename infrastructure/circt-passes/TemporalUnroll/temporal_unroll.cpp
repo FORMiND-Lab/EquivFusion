@@ -76,7 +76,7 @@ hw::HWModuleOp EquivFusionTemporalUnrollPass::createUnrollModule(OpBuilder &buil
 
     // Create new module
     std::string newModuleName = module.getName().str();
-    auto newModule = builder.create<hw::HWModuleOp>(module.getLoc(), builder.getStringAttr(newModuleName), newPorts);
+    auto newModule = hw::HWModuleOp::create(builder, module.getLoc(), builder.getStringAttr(newModuleName), newPorts);
 
     // Clear the automatically created body
     newModule.getBodyBlock()->clear();
@@ -121,7 +121,7 @@ LogicalResult EquivFusionTemporalUnrollPass::creatUnrollModuleBody(OpBuilder &bu
     }
 
     // Create final output operation
-    builder.create<hw::OutputOp>(newModule.getLoc(), newOutputValues);
+    hw::OutputOp::create(builder,newModule.getLoc(), newOutputValues);
     return success();
 }
 
