@@ -163,12 +163,24 @@ void EquivMiterTool::populatePreparePasses(mlir::PassManager& pm) {
 
     /// Inlines Private HW modules
     pm.addPass(hw::createFlattenModules());
-    /// [Temp fix]: hw.arary_slice unsupported in HWAggregateToComb, replace with hw.array_get + hw.array_create
-    pm.addPass(circt::equivfusion::hw::createEquivFusionFlattenArraySlice());
+
+    /// Flatten IO struct
+    pm.addPass(circt::hw::createFlattenIO());
+    pm.addPass(createSimpleCanonicalizerPass());
+
     /// Module Port array => integer
     pm.addPass(circt::equivfusion::hw::createEquivFusionFlattenIOArray());
+
+    /// [Temp fix]: hw.arary_slice unsupported in HWAggregateToComb, replace with hw.array_get + hw.array_create
+    pm.addPass(circt::equivfusion::hw::createEquivFusionFlattenArraySlice());
+    /// [Temp fix]: hw.struct_explode replace with hw.struct_extract
+    pm.addPass(circt::equivfusion::hw::createEquivFusionFlattenStructExplode());
+
     /// Aggregate Operations tp Comb operations
     pm.nest<hw::HWModuleOp>().addPass(hw::createHWAggregateToComb());
+    /// [Temp fix]: Struct op to Comb
+    pm.addPass(circt::equivfusion::hw::createEquivFusionHWAggregateToComb());
+
     /// Canonicalize
     pm.addPass(createSimpleCanonicalizerPass());
 }

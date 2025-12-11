@@ -40,4 +40,47 @@ def EquivFusionFlattenArraySlice : Pass<"EquivFusion_flatten-array-slice", "mlir
     let dependentDialects = ["circt::hw::HWDialect"];
 }
 
+def EquivFusionHWAggregateToComb : Pass<"EquivFusion-hw-aggregate-to-comb", "mlir::ModuleOp"> {
+    let summary = "Lower aggregate operations to comb operations";
+
+    let description = [{
+        This Pass lower aggregate operations to comb operations
+
+        ```mlir
+        %b = hw.struct_extract %0["b"] : !hw.struct<a: i32, b: i32>
+        ```
+
+        becomes:
+
+        ```mlir
+        %1 = hw.bitcast %0 : (!hw.struct<a: i32, b: i32>) -> i64
+        %2 = comb.extract %1 from 32 : (i64) -> i32
+        ```
+    }];
+
+    let dependentDialects = ["circt::comb::CombDialect"];
+}
+
+def EquivFusionFlattenStructExplode : Pass<"EquivFusion-flatten-struct-explode", "mlir::ModuleOp"> {
+    let summary = "Flatten hw.struct_explode to hw.struct_extract";
+
+
+    let description = [{
+        This Pass flatten hw.struct_explode to hw.struct_extract
+
+        ```mlir
+        %a, %b = hw.struct_explode %0 : !hw.struct<a: i32, b: i32>
+        ```
+
+        becomes:
+
+        ```mlir
+        %a = hw.struct_extract %0["a"] : !hw.struct<a: i32, b: i32>
+        %b = hw.struct_extract %0["b"] : !hw.struct<a: i32, b: i32>
+        ```
+    }];
+
+    let dependentDialects = ["circt::hw::HWDialect"];
+}
+
 #endif // EQUIVFUSION_HW_TRANSFORMS_PASSES_TD
