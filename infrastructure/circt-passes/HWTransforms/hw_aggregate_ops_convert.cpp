@@ -1,3 +1,4 @@
+t
 #include "circt-passes/HWTransforms/Passes.h"
 #include "circt/Dialect/HW/HWOps.h"
 #include "circt/Dialect/Comb/CombOps.h"
@@ -30,7 +31,6 @@ namespace {
  *                                                                                 |       %4 = hw.array_create %1, %3 : i1
  * -------------------------------------------------------------------------------------------------------------------------------------------------
  */
-/**
 struct HWArraySliceOpConversion : OpRewritePattern<hw::ArraySliceOp> {
     using OpRewritePattern<hw::ArraySliceOp>::OpRewritePattern;
 
