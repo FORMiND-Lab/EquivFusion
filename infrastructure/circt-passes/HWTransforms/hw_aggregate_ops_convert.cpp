@@ -1,4 +1,3 @@
-t
 #include "circt-passes/HWTransforms/Passes.h"
 #include "circt/Dialect/HW/HWOps.h"
 #include "circt/Dialect/Comb/CombOps.h"

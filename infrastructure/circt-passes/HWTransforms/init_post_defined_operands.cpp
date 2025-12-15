@@ -3,8 +3,6 @@
 #include "circt/Dialect/Comb/CombOps.h"
 #include "mlir/Transforms/GreedyPatternRewriteDriver.h"
 
-#include <iostream>
-
 namespace circt {
 namespace equivfusion {
 namespace hw {
