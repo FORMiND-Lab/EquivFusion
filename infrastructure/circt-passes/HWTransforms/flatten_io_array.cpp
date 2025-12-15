@@ -74,6 +74,16 @@ struct EquivFusionFlattenIOArrayPass
 };
 } // namespace
 
+/**
+ * Flatten IO array to IO bit
+ * --------------------------------------------------------------------------------------------------------------------------------------------------
+ *      Example                                                                         |       After Convert
+ * --------------------------------------------------------------------------------------------------------------------------------------------------
+ *      hw.module @array(in %in : !hw.array<2xi1>, out out : !hw.array<2xi1>) {         |       hw.module @array(in %in : i2, out out : i2) {
+ *          hw.output %in : !hw.array<2xi1>                                             |           hw.output %in : i2
+ *      }                                                                               |       }
+ * --------------------------------------------------------------------------------------------------------------------------------------------------
+ */
 void EquivFusionFlattenIOArrayPass::runOnOperation() {
     ModuleOp module = getOperation();
     ArrayTypeConverter typeConverter;

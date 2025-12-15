@@ -13,29 +13,16 @@ def EquivFusionFlattenIOArray : Pass<"EquivFusion-flatten-io-array", "mlir::Modu
     let dependentDialects = ["circt::hw::HWDialect"];
 }
 
-def EquivFusionFlattenArraySlice : Pass<"EquivFusion_flatten-array-slice", "mlir::ModuleOp"> {
-    let summary = "Flatten hw.array_slice to hw.array_get + hw.array_create";
+def EquivFusionHWAggregateOpsConvert : Pass<"EquivFusion-hw-aggregate-ops-convert", "mlir::ModuleOp"> {
+    let summary = "hw aggregate operations convert";
 
     let description = [{
-        This Pass flatten hw.array_slice to hw.array_get + hw.array_create
+        This Pass converts hw.aggregate operations
 
-        ```mlir
-        %0 = hw.array_slice %in_1dim[%idx] : (!hw.array<3xi1>) -> !hw.array<2xi1>
-        ```
-
-        becomes:
-
-        ```mlir
-        %c1_i2 = hw.constant 1 : i2
-        %c0_i2 = hw.constant 0 : i2
-        %0 = comb.add %idx, %c0_i2 : i2
-        %1 = hw.array_get %in_1dim[%0] : !hw.array<3xi1>, i2
-        %2 = comb.add %idx, %c1_i2 : i2
-        %3 = hw.array_get %in_1dim[%2] : !hw.array<3xi1>, i2
-        %4 = hw.array_create %1, %3 : i1
-        ```
+        1. hw.array_slice       => hw.array_get + hw.array_create
+        2. hw.struct_explode    => hw.struct_extract
+        3. hw.struct_inject     => hw.struct_extract + hw.struct_create
     }];
-
 
     let dependentDialects = ["circt::hw::HWDialect"];
 }
@@ -45,39 +32,16 @@ def EquivFusionHWAggregateToComb : Pass<"EquivFusion-hw-aggregate-to-comb", "mli
 
     let description = [{
         This Pass lower aggregate operations to comb operations
-
-        ```mlir
-        %b = hw.struct_extract %0["b"] : !hw.struct<a: i32, b: i32>
-        ```
-
-        becomes:
-
-        ```mlir
-        %1 = hw.bitcast %0 : (!hw.struct<a: i32, b: i32>) -> i64
-        %2 = comb.extract %1 from 32 : (i64) -> i32
-        ```
     }];
 
     let dependentDialects = ["circt::comb::CombDialect"];
 }
 
-def EquivFusionFlattenStructExplode : Pass<"EquivFusion-flatten-struct-explode", "mlir::ModuleOp"> {
-    let summary = "Flatten hw.struct_explode to hw.struct_extract";
-
+def EquivFusionInitPostDefinedOperands : Pass<"EquivFusion-init-post-defined-operands", "mlir::ModuleOp"> {
+    let summary = "Init post defined operands in ArrayInjectOp/StructInjectOp";
 
     let description = [{
-        This Pass flatten hw.struct_explode to hw.struct_extract
-
-        ```mlir
-        %a, %b = hw.struct_explode %0 : !hw.struct<a: i32, b: i32>
-        ```
-
-        becomes:
-
-        ```mlir
-        %a = hw.struct_extract %0["a"] : !hw.struct<a: i32, b: i32>
-        %b = hw.struct_extract %0["b"] : !hw.struct<a: i32, b: i32>
-        ```
+        This Pass init post defined operand in ArrayInjectOp and StructInjectOp
     }];
 
     let dependentDialects = ["circt::hw::HWDialect"];

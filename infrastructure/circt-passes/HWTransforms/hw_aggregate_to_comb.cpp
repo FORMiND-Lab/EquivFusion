@@ -18,14 +18,41 @@ using namespace circt;
 
 namespace {
 
-struct HWStructExtractOpConversion
-        : OpConversionPattern<hw::StructExtractOp> {
+/**
+ * Convert hw.struct_create to comb.concat
+ * -------------------------------------------------------------------------------------------------------------------------------------------------
+ *      Example                                                             |       After Convert
+ * -------------------------------------------------------------------------------------------------------------------------------------------------
+ *      %0 = hw.struct_create (%in, %in) : !hw.struct<a: i32, b: i32>       |       %0 = comb.concat %in, %in : i32, i32
+ *                                                                          |       %1 = hw.bitcast %0 : (i64) -> !hw.struct<a: i32, b: i32>
+ * -------------------------------------------------------------------------------------------------------------------------------------------------
+ */
+struct HWStructCreateOpConversion : OpConversionPattern<hw::StructCreateOp> {
+    using OpConversionPattern<hw::StructCreateOp>::OpConversionPattern;
+
+    LogicalResult
+    matchAndRewrite(hw::StructCreateOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter) const override {
+        rewriter.replaceOpWithNewOp<comb::ConcatOp>(op, adaptor.getInput());
+        return success();
+    }
+};
+
+
+/**
+ * Convert hw.struct_extract to comb.extract
+ * -------------------------------------------------------------------------------------------------------------------------------------------------
+ *      Example                                                             |       After Convert
+ * -------------------------------------------------------------------------------------------------------------------------------------------------
+ *      %b = hw.struct_extract %0["b"] : !hw.struct<a: i32, b: i32>         |       %1 = hw.bitcast %0 : (!hw.struct<a: i32, b: i32>) -> i64
+ *                                                                          |       %2 = comb.extract %1 from 32 : (i64) -> i32
+ * -------------------------------------------------------------------------------------------------------------------------------------------------
+ */
+struct HWStructExtractOpConversion : OpConversionPattern<hw::StructExtractOp> {
     using OpConversionPattern<hw::StructExtractOp>::OpConversionPattern;
 
     LogicalResult
-    matchAndRewrite(hw::StructExtractOp op, OpAdaptor adaptor,
-                    ConversionPatternRewriter &rewriter) const override {
-        auto structType = cast < hw::StructType > (op.getInput().getType());
+    matchAndRewrite(hw::StructExtractOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter) const override {
+        auto structType = cast<hw::StructType>(op.getInput().getType());
         auto fieldName = op.getFieldName();
 
         uint64_t offset = 0;
@@ -37,9 +64,7 @@ struct HWStructExtractOpConversion
         }
 
         auto fieldWidth = hw::getBitWidth(op.getResult().getType());
-        auto extracted = rewriter.createOrFold<comb::ExtractOp>(op.getLoc(), adaptor.getInput(), offset,
-                                                                fieldWidth);
-
+        auto extracted = rewriter.createOrFold<comb::ExtractOp>(op.getLoc(), adaptor.getInput(), offset, fieldWidth);
         rewriter.replaceOp(op, extracted);
         return success();
     }
@@ -78,7 +103,7 @@ public:
 
 static void populateHWAggregateToCombOpConversionPatterns(
         RewritePatternSet &patterns, AggregateTypeConverter &typeConverter) {
-    patterns.add<HWStructExtractOpConversion>(
+    patterns.add<HWStructCreateOpConversion, HWStructExtractOpConversion>(
             typeConverter, patterns.getContext());
 }
 
@@ -92,8 +117,7 @@ struct EquivFusionHWAggregateToCombPass
 void EquivFusionHWAggregateToCombPass::runOnOperation() {
     ConversionTarget target(getContext());
 
-    target.addIllegalOp<hw::StructExtractOp>();
-
+    target.addIllegalOp<hw::StructCreateOp, hw::StructExtractOp>();
     target.addLegalDialect<hw::HWDialect, comb::CombDialect>();
 
     RewritePatternSet patterns(&getContext());

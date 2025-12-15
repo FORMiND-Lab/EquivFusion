@@ -171,10 +171,13 @@ void EquivMiterTool::populatePreparePasses(mlir::PassManager& pm) {
     /// Module Port array => integer
     pm.addPass(circt::equivfusion::hw::createEquivFusionFlattenIOArray());
 
-    /// [Temp fix]: hw.arary_slice unsupported in HWAggregateToComb, replace with hw.array_get + hw.array_create
-    pm.addPass(circt::equivfusion::hw::createEquivFusionFlattenArraySlice());
-    /// [Temp fix]: hw.struct_explode replace with hw.struct_extract
-    pm.addPass(circt::equivfusion::hw::createEquivFusionFlattenStructExplode());
+    /// [Temp fix] Initialize post-defined operands for hw::ArrayInjectOp/hw::StructInjectOp
+    pm.addPass(circt::equivfusion::hw::createEquivFusionInitPostDefinedOperands());
+    /// [Temp fix]
+    /// 1. hw.array_slice       => hw.array_get + hw.array_create
+    /// 2. hw.struct_explode    => hw.struct_extract
+    /// 3. hw.struct_inject     => hw.struct_extract + hw.struct_create
+    pm.addPass(circt::equivfusion::hw::createEquivFusionHWAggregateOpsConvert());
 
     /// Aggregate Operations tp Comb operations
     pm.nest<hw::HWModuleOp>().addPass(hw::createHWAggregateToComb());
