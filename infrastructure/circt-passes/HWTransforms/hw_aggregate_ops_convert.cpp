@@ -18,17 +18,19 @@ namespace {
 
 /**
  * Convert hw.array_slice to hw.array_get + hw.array_create
- * e.g.
- *      %0 = hw.array_slice %in_1dim[%idx] : (!hw.array<3xi1>) -> !hw.array<2xi1>
- * After convert:
- *      %c1_i2 = hw.constant 1 : i2
- *      %c0_i2 = hw.constant 0 : i2
- *      %0 = comb.add %idx, %c0_i2 : i2
- *      %1 = hw.array_get %in_1dim[%0] : !hw.array<3xi1>, i2
- *      %2 = comb.add %idx, %c1_i2 : i2
- *      %3 = hw.array_get %in_1dim[%2] : !hw.array<3xi1>, i2
- *      %4 = hw.array_create %1, %3 : i1
+ * -------------------------------------------------------------------------------------------------------------------------------------------------
+ *    Example                                                                      |       After Convert
+ * -------------------------------------------------------------------------------------------------------------------------------------------------
+ *    %0 = hw.array_slice %in_1dim[%idx] : (!hw.array<3xi1>) -> !hw.array<2xi1>    |       %c1_i2 = hw.constant 1 : i2
+ *                                                                                 |       %c0_i2 = hw.constant 0 : i2
+ *                                                                                 |       %0 = comb.add %idx, %c0_i2 : i2
+ *                                                                                 |       %1 = hw.array_get %in_1dim[%0] : !hw.array<3xi1>, i2
+ *                                                                                 |       %2 = comb.add %idx, %c1_i2 : i2
+ *                                                                                 |       %3 = hw.array_get %in_1dim[%2] : !hw.array<3xi1>, i2
+ *                                                                                 |       %4 = hw.array_create %1, %3 : i1
+ * -------------------------------------------------------------------------------------------------------------------------------------------------
  */
+/**
 struct HWArraySliceOpConversion : OpRewritePattern<hw::ArraySliceOp> {
     using OpRewritePattern<hw::ArraySliceOp>::OpRewritePattern;
 
