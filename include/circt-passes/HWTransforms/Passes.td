@@ -37,11 +37,11 @@ def EquivFusionHWAggregateToComb : Pass<"EquivFusion-hw-aggregate-to-comb", "mli
     let dependentDialects = ["circt::comb::CombDialect"];
 }
 
-def EquivFusionInitAfterDefinedOperands : Pass<"EquivFusion-init-after-defined-operands", "mlir::ModuleOp"> {
-    let summary = "Init after defined operands in ArrayInjectOp/StructInjectOp";
+def EquivFusionInitPostDefinedOperands : Pass<"EquivFusion-init-post-defined-operands", "mlir::ModuleOp"> {
+    let summary = "Init post defined operands in ArrayInjectOp/StructInjectOp";
 
     let description = [{
-        This Pass init after defined operand in ArrayInjectOp and StructInjectOp
+        This Pass init post defined operand in ArrayInjectOp and StructInjectOp
     }];
 
     let dependentDialects = ["circt::hw::HWDialect"];

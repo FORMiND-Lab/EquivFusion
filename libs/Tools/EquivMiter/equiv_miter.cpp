@@ -171,8 +171,8 @@ void EquivMiterTool::populatePreparePasses(mlir::PassManager& pm) {
     /// Module Port array => integer
     pm.addPass(circt::equivfusion::hw::createEquivFusionFlattenIOArray());
 
-    /// [Temp fix] Initialize after-defined operands for hw::ArrayInjectOp/hw::StructInjectOp
-    pm.addPass(circt::equivfusion::hw::createEquivFusionInitAfterDefinedOperands());
+    /// [Temp fix] Initialize post-defined operands for hw::ArrayInjectOp/hw::StructInjectOp
+    pm.addPass(circt::equivfusion::hw::createEquivFusionInitPostDefinedOperands());
     /// [Temp fix]
     /// 1. hw.array_slice       => hw.array_get + hw.array_create
     /// 2. hw.struct_explode    => hw.struct_extract
