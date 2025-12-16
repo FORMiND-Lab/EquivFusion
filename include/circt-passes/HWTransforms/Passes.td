@@ -19,9 +19,10 @@ def EquivFusionHWAggregateOpsConvert : Pass<"equivfusion-hw-aggregate-ops-conver
     let description = [{
         This Pass converts hw.aggregate operations
 
-        1. hw.array_slice       => hw.array_get + hw.array_create
-        2. hw.struct_explode    => hw.struct_extract
-        3. hw.struct_inject     => hw.struct_extract + hw.struct_create
+        1. hw.array_slice       => N x hw.array_get + hw.array_create
+        2. hw.struct_explode    => N x hw.struct_extract
+        3. hw.struct_inject     => N x hw.struct_extract + hw.struct_create
+        4. comb.mux             => 2 x hw.bitcast + comb.mux + hw.bitcast [result type is hw.array or hw.struct]
     }];
 
     let dependentDialects = ["circt::hw::HWDialect"];
