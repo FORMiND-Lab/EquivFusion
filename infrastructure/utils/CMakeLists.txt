@@ -22,7 +22,7 @@ target_link_libraries(EquivFusionUtils
     MLIRAffineToStandard
     MLIRAffineAnalysis
 
-    FuncToHWModule
+    EquivFusionFuncToHWModule
     EquivFusionRemoveRedundantFunc
     EquivFusionMemrefHLS
 )

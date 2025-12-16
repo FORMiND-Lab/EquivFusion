@@ -3,7 +3,7 @@
 
 include "mlir/Pass/PassBase.td"
 
-def EquivFusionDecomposeConcat : Pass<"EquivFusion-decompose-concat", "::mlir::ModuleOp"> {
+def EquivFusionDecomposeConcat : Pass<"equivfusion-decompose-concat", "::mlir::ModuleOp"> {
   let summary = "Decompose multi-input concat operations into binary concat chains";
   let description = [{
     This pass decomposes comb.concat operations with more than 2 inputs into
@@ -25,7 +25,7 @@ def EquivFusionDecomposeConcat : Pass<"EquivFusion-decompose-concat", "::mlir::M
   let dependentDialects = ["circt::comb::CombDialect"];
 }
 
-def EquivFusionReplicateToConcat : Pass<"EquivFusion-replicate-to-concat", "::mlir::ModuleOp"> {
+def EquivFusionReplicateToConcat : Pass<"equivfusion-replicate-to-concat", "::mlir::ModuleOp"> {
     let summary = "Convert 'comb.replicate' to 'comb.concat'";
 
     let description = [{

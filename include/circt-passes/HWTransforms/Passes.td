@@ -3,7 +3,7 @@
 
 include "mlir/Pass/PassBase.td"
 
-def EquivFusionFlattenIOArray : Pass<"EquivFusion-flatten-io-array", "mlir::ModuleOp"> {
+def EquivFusionFlattenIOArray : Pass<"equivfusion-flatten-io-array", "mlir::ModuleOp"> {
     let summary = "Convert packed-array port of hw.module to integer";
 
     let description = [{
@@ -13,7 +13,7 @@ def EquivFusionFlattenIOArray : Pass<"EquivFusion-flatten-io-array", "mlir::Modu
     let dependentDialects = ["circt::hw::HWDialect"];
 }
 
-def EquivFusionHWAggregateOpsConvert : Pass<"EquivFusion-hw-aggregate-ops-convert", "mlir::ModuleOp"> {
+def EquivFusionHWAggregateOpsConvert : Pass<"equivfusion-hw-aggregate-ops-convert", "mlir::ModuleOp"> {
     let summary = "hw aggregate operations convert";
 
     let description = [{
@@ -27,7 +27,7 @@ def EquivFusionHWAggregateOpsConvert : Pass<"EquivFusion-hw-aggregate-ops-conver
     let dependentDialects = ["circt::hw::HWDialect"];
 }
 
-def EquivFusionHWAggregateToComb : Pass<"EquivFusion-hw-aggregate-to-comb", "mlir::ModuleOp"> {
+def EquivFusionHWAggregateToComb : Pass<"equivfusion-hw-aggregate-to-comb", "mlir::ModuleOp"> {
     let summary = "Lower aggregate operations to comb operations";
 
     let description = [{
@@ -37,7 +37,7 @@ def EquivFusionHWAggregateToComb : Pass<"EquivFusion-hw-aggregate-to-comb", "mli
     let dependentDialects = ["circt::comb::CombDialect"];
 }
 
-def EquivFusionInitPostDefinedOperands : Pass<"EquivFusion-init-post-defined-operands", "mlir::ModuleOp"> {
+def EquivFusionInitPostDefinedOperands : Pass<"equivfusion-init-post-defined-operands", "mlir::ModuleOp"> {
     let summary = "Init post defined operands in ArrayInjectOp/StructInjectOp";
 
     let description = [{

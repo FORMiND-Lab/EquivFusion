@@ -3,7 +3,7 @@
 
 include "mlir/Pass/PassBase.td"
 
-def FuncToHWModule : Pass<"func-to-hw-module", "mlir::ModuleOp"> { 
+def EquivFusionFuncToHWModule : Pass<"equivfusion-func-to-hw-module", "mlir::ModuleOp"> {
     let summary = "Convert func.func to hw.module";
 
     let description = [{
