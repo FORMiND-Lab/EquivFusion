@@ -7,8 +7,10 @@
 #include "mlir/IR/IRMapping.h"
 
 namespace circt {
+namespace equivfusion {
 #define GEN_PASS_DEF_EQUIVFUSIONTEMPORALUNROLL
 #include "circt-passes/TemporalUnroll/Passes.h.inc"
+} // namespace equivfusion
 } // namespace circt;
 
 using namespace circt;
@@ -16,8 +18,8 @@ using namespace mlir;
 
 namespace {
 struct EquivFusionTemporalUnrollPass
-    : public circt::impl::EquivFusionTemporalUnrollBase<EquivFusionTemporalUnrollPass> {
-    using circt::impl::EquivFusionTemporalUnrollBase<EquivFusionTemporalUnrollPass>::EquivFusionTemporalUnrollBase;
+        : public circt::equivfusion::impl::EquivFusionTemporalUnrollBase<EquivFusionTemporalUnrollPass> {
+    using circt::equivfusion::impl::EquivFusionTemporalUnrollBase<EquivFusionTemporalUnrollPass>::EquivFusionTemporalUnrollBase;
 
     void runOnOperation() override;
 

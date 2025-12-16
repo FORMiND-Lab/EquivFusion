@@ -17,7 +17,7 @@
 #include "llvm/Support/Casting.h"
 
 namespace circt {
-#define GEN_PASS_DEF_FUNCTOHWMODULE
+#define GEN_PASS_DEF_EQUIVFUSIONFUNCTOHWMODULE
 #include "circt-passes/FuncToHWModule/Passes.h.inc"
 } // namespace circt
  
@@ -113,8 +113,9 @@ struct ArrayInfo{
 // This pass restricts that:
 // 1. All memrefs in the funcOp must be one-dimensional.
 // 2. Arguments with the "equivfusion.direction" attribute set to "out" must have memref type.
-struct FuncToHWModulePass : public circt::impl::FuncToHWModuleBase<FuncToHWModulePass> {
-    using circt::impl::FuncToHWModuleBase<FuncToHWModulePass>::FuncToHWModuleBase;
+struct EquivFusionFuncToHWModulePass
+        : public circt::impl::EquivFusionFuncToHWModuleBase<EquivFusionFuncToHWModulePass> {
+    using circt::impl::EquivFusionFuncToHWModuleBase<EquivFusionFuncToHWModulePass>::EquivFusionFuncToHWModuleBase;
 
     void runOnOperation() override;
 private:
@@ -371,7 +372,7 @@ CFRemover::run() {
     return mlir::success();
 }
 
-mlir::Value FuncToHWModulePass::createArrayFromArrayInfo(mlir::OpBuilder &builder, ArrayInfo &info) {
+mlir::Value EquivFusionFuncToHWModulePass::createArrayFromArrayInfo(mlir::OpBuilder &builder, ArrayInfo &info) {
   auto constantZeroOp = builder.create<circt::hw::ConstantOp>(builder.getUnknownLoc(), info.elementType, 0);
   mlir::Value zeroVal = constantZeroOp.getResult();
 
@@ -391,7 +392,7 @@ mlir::Value FuncToHWModulePass::createArrayFromArrayInfo(mlir::OpBuilder &builde
 // - memref has dynamic dimensions
 // - memref has more than 1 dimensions
 mlir::FailureOr<circt::hw::ArrayType>
-FuncToHWModulePass::createArrayTypeFromMemRefType(mlir::OpBuilder &builder, mlir::MemRefType memRefType) {
+EquivFusionFuncToHWModulePass::createArrayTypeFromMemRefType(mlir::OpBuilder &builder, mlir::MemRefType memRefType) {
   if (!memRefType.hasStaticShape()) {
     llvm::errs() << "The memref type is not a static shape.\n";
     return mlir::failure();
@@ -409,8 +410,8 @@ FuncToHWModulePass::createArrayTypeFromMemRefType(mlir::OpBuilder &builder, mlir
   return circt::hw::ArrayType::get(elementType, size);
 }
 
-mlir::FailureOr<circt::hw::HWModuleOp> 
-FuncToHWModulePass::buildHWModuleOpFromFuncOp(mlir::OpBuilder &builder, mlir::func::FuncOp funcOp,
+mlir::FailureOr<circt::hw::HWModuleOp>
+EquivFusionFuncToHWModulePass::buildHWModuleOpFromFuncOp(mlir::OpBuilder &builder, mlir::func::FuncOp funcOp,
   llvm::DenseMap<mlir::Value, unsigned int> &funcParamInToModuleInIndexMap,
   llvm::DenseMap<mlir::Value, unsigned int> &funcParamOutToModuleOutIndexMap) { 
     builder.setInsertionPointAfter(funcOp);
@@ -513,7 +514,7 @@ FuncToHWModulePass::buildHWModuleOpFromFuncOp(mlir::OpBuilder &builder, mlir::fu
 }
 
 mlir::LogicalResult
-FuncToHWModulePass::copyOpFromFuncToHWModule(mlir::OpBuilder &builder, mlir::func::FuncOp funcOp, circt::hw::HWModuleOp hwModuleOp,
+EquivFusionFuncToHWModulePass::copyOpFromFuncToHWModule(mlir::OpBuilder &builder, mlir::func::FuncOp funcOp, circt::hw::HWModuleOp hwModuleOp,
     llvm::DenseMap<mlir::Value, unsigned int> &funcParamInToModuleInIndexMap,
     llvm::DenseMap<mlir::Value, unsigned int> &funcParamOutToModuleOutIndexMap) {
   // Get the body block of the hw.module
@@ -764,7 +765,7 @@ FuncToHWModulePass::copyOpFromFuncToHWModule(mlir::OpBuilder &builder, mlir::fun
   return mlir::success();
 }
 
-mlir::LogicalResult FuncToHWModulePass::convertFuncToHWModule(mlir::func::FuncOp funcOp) {
+mlir::LogicalResult EquivFusionFuncToHWModulePass::convertFuncToHWModule(mlir::func::FuncOp funcOp) {
     mlir::OpBuilder builder(funcOp.getContext());
     llvm::DenseMap<mlir::Value, unsigned int> funcParamInToModuleInIndexMap;
     llvm::DenseMap<mlir::Value, unsigned int> funcParamOutToModuleOutIndexMap;
@@ -782,12 +783,12 @@ mlir::LogicalResult FuncToHWModulePass::convertFuncToHWModule(mlir::func::FuncOp
     return mlir::success();
 }
 
-mlir::LogicalResult FuncToHWModulePass::removeControlFlowFromFuncOp(mlir::func::FuncOp funcOp) {
+mlir::LogicalResult EquivFusionFuncToHWModulePass::removeControlFlowFromFuncOp(mlir::func::FuncOp funcOp) {
     CFRemover remover(funcOp.getBody());
     return remover.run();
 }
 
-void FuncToHWModulePass::runOnOperation() {
+void EquivFusionFuncToHWModulePass::runOnOperation() {
     for (auto op : llvm::make_early_inc_range(getOperation().getOps<mlir::func::FuncOp>())) {
         if (mlir::failed(removeControlFlowFromFuncOp(op))) {
             return signalPassFailure();

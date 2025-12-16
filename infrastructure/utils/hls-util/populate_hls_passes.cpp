@@ -57,7 +57,7 @@ void populateHLSPasses(mlir::PassManager &pm) {
 
     //Convert Func to Module
     pm.addPass(mlir::createCanonicalizerPass());
-    pm.addPass(circt::createFuncToHWModule());
+    pm.addPass(circt::createEquivFusionFuncToHWModule());
     
     pm.addPass(mlir::createCanonicalizerPass());
 }

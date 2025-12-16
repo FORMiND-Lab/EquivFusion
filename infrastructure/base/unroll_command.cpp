@@ -94,8 +94,8 @@ llvm::LogicalResult UnrollCommand::executeUnroll(const UnrollOptions &opts) {
     pm.enableVerifier(true);
     pm.enableTiming(ts);
 
-    circt::EquivFusionTemporalUnrollOptions timeUnrollOpts = {opts.steps};
-    pm.addPass(circt::createEquivFusionTemporalUnroll(timeUnrollOpts));
+    circt::equivfusion::EquivFusionTemporalUnrollOptions timeUnrollOpts = {opts.steps};
+    pm.addPass(circt::equivfusion::createEquivFusionTemporalUnroll(timeUnrollOpts));
 #if 0
     pm.addPass(mlir::createCSEPass());
     pm.addPass(mlir::createCanonicalizerPass());
