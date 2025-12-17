@@ -136,6 +136,46 @@ struct HWStructInjectOpConversion : OpRewritePattern<hw::StructInjectOp> {
     }
 };
 
+/**
+ * Convert comb.mux with hw::ArrayType or hw::StructType to hw::BitcastOp + comb.mux + hw::BitcastOp
+ * -------------------------------------------------------------------------------------------------------------------------------------------------
+ *      Example                                                             |       After Convert
+ * -------------------------------------------------------------------------------------------------------------------------------------------------
+ *      %0 = comb.mux %cond, %in1, %in2 : !hw.array<2xi1>                   |       %0 = hw.bitcast %in1 : (!hw.array<2xi1>) -> i2
+ *                                                                          |       %1 = hw.bitcast %in2 : (!hw.array<2xi1>) -> i2
+ *                                                                          |       %2 = comb.mux %cond, %0, %1 : i2
+ *                                                                          |       %3 = hw.bitcast %2 : (i2) -> !hw.array<2xi1>
+ * -------------------------------------------------------------------------------------------------------------------------------------------------
+ *      %0 = comb.mux %cond, %in1, %in2 : !hw.struct<a: i32, b: i32>        |       %0 = hw.bitcast %in1 : (!hw.struct<a: i32, b: i32>) -> i64
+ *                                                                          |       %1 = hw.bitcast %in2 : (!hw.struct<a: i32, b: i32>) -> i64
+ *                                                                          |       %2 = comb.mux %cond, %0, %1 : i64
+ *                                                                          |       %3 = hw.bitcast %2 : (i64) -> !hw.struct<a: i32, b: i32>
+ * -------------------------------------------------------------------------------------------------------------------------------------------------
+ */
+struct CombMuxOpConversion : OpRewritePattern<comb::MuxOp> {
+    using OpRewritePattern<comb::MuxOp>::OpRewritePattern;
+
+    LogicalResult matchAndRewrite(comb::MuxOp op, PatternRewriter &rewriter) const override {
+        auto resultType = op.getResult().getType();
+        if (!isa<hw::StructType>(resultType) && !isa<hw::ArrayType>(resultType)) {
+            return failure();
+        }
+
+        auto trueValue = op.getTrueValue();
+        auto falseValue = op.getFalseValue();
+        assert (trueValue.getType() == resultType && falseValue.getType() == resultType);
+
+        auto integerType = IntegerType::get(resultType.getContext(), hw::getBitWidth(resultType));
+
+        auto newTrueValue = hw::BitcastOp::create(rewriter, trueValue.getLoc(), integerType, trueValue);
+        auto newFalseValue = hw::BitcastOp::create(rewriter, falseValue.getLoc(), integerType, falseValue);
+        auto newMuxOp = comb::MuxOp::create(rewriter, op.getLoc(), op.getCond(), newTrueValue, newFalseValue);
+        auto newResult = hw::BitcastOp::create(rewriter, op.getLoc(), resultType, newMuxOp);
+        rewriter.replaceOp(op, newResult);
+        return success();
+    }
+};
+
 } // namespace
 
 namespace {
@@ -149,7 +189,8 @@ void EquivFusionHWAggregateOpsConvertPass::runOnOperation() {
     RewritePatternSet patterns(&getContext());
     patterns.add<HWArraySliceOpConversion,
                  HWStructExplodeOpConversion,
-                 HWStructInjectOpConversion>(&getContext());
+                 HWStructInjectOpConversion,
+                 CombMuxOpConversion>(&getContext());
 
     if (failed(mlir::applyPatternsGreedily(getOperation(), std::move(patterns))))
         return signalPassFailure();
