@@ -30,6 +30,16 @@ def EquivFusionSetFuncArgDirectionPass : Pass<"equivfusion-set-func-arg-directio
     ];
 }
 
+def EquivFusionGetGlobalToAllocPass : Pass<"equivfusion-get-global-to-alloc", "mlir::func::FuncOp"> {
+    let summary = "Convert 'memref.global_get' to 'memref.alloc' + 'affine.store'";
+
+    let description = [{
+        This Convert 'memref.global_get' to 'memref.alloc' + 'affine.store' in 'func.func'.
+    }];
+
+    let dependentDialects = ["mlir::func::FuncDialect", "mlir::arith::ArithDialect", "mlir::affine::AffineDialect", "mlir::memref::MemRefDialect"];
+}
+ 
 
 
 

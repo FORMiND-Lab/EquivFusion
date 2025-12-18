@@ -45,8 +45,8 @@ endif()
 # CIRCT Configuration
 # -------------------------------------------
 
-set(CIRCT_LINUX_DOWNLOAD_URL "https://github.com/llvm/circt/releases/download/firtool-1.132.0/circt-full-shared-linux-x64.tar.gz")
-set(CIRCT_APPLE_DOWNLOAD_URL "https://github.com/llvm/circt/releases/download/firtool-1.132.0/circt-full-shared-macos-x64.tar.gz")
+set(CIRCT_LINUX_DOWNLOAD_URL "https://github.com/llvm/circt/releases/download/firtool-1.138.0/circt-full-shared-linux-x64.tar.gz")
+set(CIRCT_APPLE_DOWNLOAD_URL "https://github.com/llvm/circt/releases/download/firtool-1.138.0/circt-full-shared-macos-x64.tar.gz")
 set(CIRCT_PREBUILD_DIR "${CMAKE_CURRENT_SOURCE_DIR}/circt_prebuild")
 set(CIRCT_TAR_PATH "${CIRCT_PREBUILD_DIR}/circt_prebuild.tar.gz")
 

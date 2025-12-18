@@ -21,7 +21,7 @@ XUANSONG_NAMESPACE_HEADER_START
 void populateHLSPasses(mlir::PassManager &pm) {
     // Unroll affine loops.
     pm.addPass(mlir::createCanonicalizerPass());
-    pm.addNestedPass<mlir::func::FuncOp>(mlir::affine::createLoopUnrollPass(-1, false, true, [](mlir::affine::AffineForOp forOp) -> unsigned int {
+    pm.addNestedPass<mlir::func::FuncOp>(mlir::affine::createLoopUnrollPass(-1, false, [](mlir::affine::AffineForOp forOp) -> unsigned int {
         std::optional<uint64_t> mayBeConstantTripCount = mlir::affine::getConstantTripCount(forOp);
         if (mayBeConstantTripCount) {
             return *mayBeConstantTripCount;
@@ -29,6 +29,10 @@ void populateHLSPasses(mlir::PassManager &pm) {
         return 0;
     }));
     
+    // Convert 'memref.get_global' to 'memref.alloc'
+    pm.addPass(mlir::createCanonicalizerPass());
+    pm.addNestedPass<mlir::func::FuncOp>(circt::createEquivFusionGetGlobalToAllocPass());
+
     // Replace affine memref accesses by scalars by forwarding stores to loads and eliminating redundant loads.
     pm.addPass(mlir::createCanonicalizerPass());
     pm.addNestedPass<mlir::func::FuncOp>(mlir::affine::createAffineScalarReplacementPass());
