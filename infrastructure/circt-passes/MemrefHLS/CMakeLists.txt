@@ -9,6 +9,9 @@ add_circt_library(EquivFusionMemrefHLS
     LINK_LIBS PUBLIC
     MLIRFuncDialect
     MLIRArithDialect
+    MLIRAffineDialect
+    MLIRMemRefDialect
+    MLIRTransformUtils
     MLIRIR
 
     LLVMSupport
