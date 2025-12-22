@@ -12,7 +12,7 @@ XUANSONG_NAMESPACE_HEADER_START
 
 struct WriteMLIROptions {
     std::string outputFilename {"-"};
-    ModuleType moduleType {ModuleType::UNKNOWN};
+    ModuleTypeEnum moduleType {ModuleTypeEnum::UNKNOWN};
 };
 
 struct WriteMLIRCommand : public Command {
@@ -65,18 +65,18 @@ bool WriteMLIRCommand::parseOptions(const std::vector<std::string>& args, WriteM
     for (size_t idx = 0; idx < args.size(); idx++) {
         auto arg = args[idx];
         if (arg == "--spec" || arg == "-spec") {
-            opts.moduleType = ModuleType::SPEC;
+            opts.moduleType = ModuleTypeEnum::SPEC;
         } else if (arg == "--impl" || arg == "-impl") {
-            opts.moduleType = ModuleType::IMPL;
+            opts.moduleType = ModuleTypeEnum::IMPL;
         } else if (arg == "--miter" || arg == "-miter") {
-            opts.moduleType = ModuleType::MITER;
+            opts.moduleType = ModuleTypeEnum::MITER;
         } else {
             opts.outputFilename = arg;
             Utils::PathUtil::expandTilde(opts.outputFilename);
         }
     }
 
-    if (opts.moduleType == ModuleType::UNKNOWN) {
+    if (opts.moduleType == ModuleTypeEnum::UNKNOWN) {
         log("[write_mlir]: please specify module type.\n");
         return false;
     }

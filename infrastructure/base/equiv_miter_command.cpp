@@ -1,4 +1,3 @@
-#include "infrastructure/managers/equivfusion_manager/equivfusionManager.h"
 #include "infrastructure/base/command.h"
 #include "infrastructure/utils/log-util/log_util.h"
 
@@ -15,7 +14,7 @@ public:
     }
 
     void execute(const std::vector<std::string>& args) override {
-        if (!EquivMiterTool::run(args)) {
+        if (!EquivMiterTool::executeMiter(args)) {
             logError("Command 'equiv_miter' failed!\n");
         }
     }
@@ -24,7 +23,16 @@ public:
     }
 
     void help() override {
-        EquivMiterTool::help(getName(), getDescription());
+        log("\n");
+        log("   OVERVIEW: %s - %s\n", getName().c_str(), getDescription().c_str());;
+        log("   USAGE:    %s <--specModule name> <--implModule name> [options]\n", getName().c_str());
+        log("   OPTIONS:\n");
+        log("       --print-ir ----------------------------- Print IR after pass\n");
+        log("       --specModule <module name> ------------- Specify a named module for the specification circuit\n");
+        log("       --implModule <module name> ------------- Specify a named module for the implementation circuit\n");
+        log("       --mitermode ---------------------------- MiterMode [smtlib, aiger, btor2], default is smtlib\n");
+        log("       -o ------------------------------------- Output filename\n");
+        log("\n\n");
     }
 } equivMiterCmd;
 

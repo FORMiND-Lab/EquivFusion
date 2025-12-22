@@ -52,7 +52,7 @@ struct HWStructExtractOpConversion : OpConversionPattern<hw::StructExtractOp> {
 
     LogicalResult
     matchAndRewrite(hw::StructExtractOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter) const override {
-        auto structType = cast<hw::StructType>(op.getInput().getType());
+        auto structType = hw::type_cast<hw::StructType>(op.getInput().getType());
         auto fieldName = op.getFieldName();
 
         uint64_t offset = 0;

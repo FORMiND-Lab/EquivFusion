@@ -1,7 +1,6 @@
 #include "infrastructure/utils/log-util/log_util.h"
 #include "infrastructure/utils/path-util/path_util.h"
 #include "libs/Tools/EquivMiter/equiv_miter.h"
-#include "infrastructure/managers/equivfusion_manager/equivfusionManager.h"
 
 #include "circt/Dialect/HW/HWOps.h"
 
@@ -40,8 +39,10 @@ using namespace circt;
 
 XUANSONG_NAMESPACE_HEADER_START
 
-bool EquivMiterTool::mergeModules(mlir::ModuleOp dest, ModuleOp src, EquivMiterToolOptions& opts, DesignTypeEnum designType) {
-    bool isSpec = designType == DesignTypeEnum::SPEC;
+bool EquivMiterTool::mergeModules(mlir::ModuleOp dest, ModuleOp src, EquivMiterToolOptions& opts, ModuleTypeEnum moduleType) {
+    assert(moduleType == ModuleTypeEnum::SPEC || moduleType == ModuleTypeEnum::IMPL);
+
+    bool isSpec = (moduleType == ModuleTypeEnum::SPEC);
     SymbolTable destTable(dest), srcTable(src);
     MLIRContext *context = EquivFusionManager::getInstance()->getGlobalContext();
     StringAttr moduleName = StringAttr::get(context, isSpec ? opts.specModuleName : opts.implModuleName);
@@ -83,7 +84,7 @@ bool EquivMiterTool::mergeModules(mlir::ModuleOp dest, ModuleOp src, EquivMiterT
     return true;
 }
 
-bool EquivMiterTool::run(const std::vector<std::string>& args) {
+bool EquivMiterTool::executeMiter(const std::vector<std::string>& args) {
     EquivMiterToolOptions opts;
     if (!parseOptions(args, opts)) {
         log("[equiv_miter]: parse options failed\n\n");
@@ -115,29 +116,27 @@ bool EquivMiterTool::run(const std::vector<std::string>& args) {
         return false;
     }
 
-    if (!mergeModules(module.get(), specModule, opts, DesignTypeEnum::SPEC)) {
+    if (!mergeModules(module.get(), specModule, opts, ModuleTypeEnum::SPEC)) {
         return false;
     }
 
-    if (!mergeModules(module.get(), implModule, opts, DesignTypeEnum::IMPL)) {
+    if (!mergeModules(module.get(), implModule, opts, ModuleTypeEnum::IMPL)) {
         return false;
     }
 
-    circt::equivfusion::EquivFusionMiterOptions miterOpts = {opts.specModuleName, opts.implModuleName, opts.miterMode};
     PassManager pm(context);
     EquivFusionManager::getInstance()->configureIRPrinting(pm, opts.printIR);
 
-    populatePreparePasses(pm);
-
+    circt::equivfusion::EquivFusionMiterOptions miterOpts = {opts.specModuleName, opts.implModuleName, opts.miterMode};
     switch (opts.miterMode) {
     case circt::equivfusion::MiterModeEnum::SMTLIB:
-        result = miterToSMT(pm, module.get(), outputFile.value()->os(), miterOpts);
+        result = executeMiterToSMT(pm, module.get(), outputFile.value()->os(), miterOpts);
         break;
     case circt::equivfusion::MiterModeEnum::AIGER:
-        result = miterToAIGER(pm, module.get(), outputFile.value()->os(), miterOpts);
+        result = executeMiterToAIGER(pm, module.get(), outputFile.value()->os(), miterOpts);
         break;
     case circt::equivfusion::MiterModeEnum::BTOR2:
-        result = miterToBTOR2(pm, module.get(), outputFile.value()->os(), miterOpts);
+        result = executeMiterToBTOR2(pm, module.get(), outputFile.value()->os(), miterOpts);
         break;
     }
 
@@ -188,8 +187,11 @@ void EquivMiterTool::populatePreparePasses(mlir::PassManager& pm) {
     pm.addPass(createSimpleCanonicalizerPass());
 }
 
-llvm::LogicalResult EquivMiterTool::miterToSMT(mlir::PassManager& pm, mlir::ModuleOp module, llvm::raw_ostream& os,
-                                               const circt::equivfusion::EquivFusionMiterOptions& miterOpts) {
+llvm::LogicalResult EquivMiterTool::executeMiterToSMT(mlir::PassManager &pm, mlir::ModuleOp module,
+                                                      llvm::raw_ostream &os,
+                                                      const circt::equivfusion::EquivFusionMiterOptions &miterOpts) {
+    populatePreparePasses(pm);
+
     pm.addPass(circt::equivfusion::createEquivFusionMiter(miterOpts));
 
     pm.addPass(circt::createConvertHWToSMT());
@@ -203,8 +205,11 @@ llvm::LogicalResult EquivMiterTool::miterToSMT(mlir::PassManager& pm, mlir::Modu
     return smt::exportSMTLIB(module, os);
 }
 
-llvm::LogicalResult EquivMiterTool::miterToAIGER(mlir::PassManager& pm, mlir::ModuleOp module, llvm::raw_ostream& os,
-                                                 const circt::equivfusion::EquivFusionMiterOptions& miterOpts) {
+llvm::LogicalResult EquivMiterTool::executeMiterToAIGER(mlir::PassManager &pm, mlir::ModuleOp module,
+                                                        llvm::raw_ostream &os,
+                                                        const circt::equivfusion::EquivFusionMiterOptions &miterOpts) {
+    populatePreparePasses(pm);
+
     pm.addPass(circt::equivfusion::createEquivFusionMiter(miterOpts));
 
     pm.addPass(hw::createFlattenModules());
@@ -225,21 +230,17 @@ llvm::LogicalResult EquivMiterTool::miterToAIGER(mlir::PassManager& pm, mlir::Mo
     return aiger::exportAIGER(*ops.begin(), os, &exportAIGEROpts);
 }
 
-LogicalResult EquivMiterTool::miterToBTOR2(mlir::PassManager &pm, mlir::ModuleOp module, llvm::raw_ostream &os,
-                                           const circt::equivfusion::EquivFusionMiterOptions &miterOpts) {
+LogicalResult EquivMiterTool::executeMiterToBTOR2(mlir::PassManager &pm, mlir::ModuleOp module,
+                                                  llvm::raw_ostream &os,
+                                                  const circt::equivfusion::EquivFusionMiterOptions &miterOpts) {
+    populatePreparePasses(pm);
+
     pm.addPass(circt::equivfusion::createEquivFusionMiter(miterOpts));
 
     pm.addPass(circt::hw::createFlattenModules());
-
-    // [Temp fix]: comb.replicate unsupported in ConvertHWToBTOR2, replace with comb.concat
-    pm.addPass(circt::equivfusion::comb::createEquivFusionReplicateToConcat());
-    // [Temp fix]: variadic comb.concat unsupported in ConvertHWToBTOR2, replace with binary comb.concat
-    pm.addPass(circt::equivfusion::comb::createEquivFusionDecomposeConcat());
-    // variadic op unsupported in ConvertHWToBTOR2, replace with binary op
-    pm.addPass(arc::createSimplifyVariadicOpsPass());
+    pm.addPass(createSimpleCanonicalizerPass());
 
     pm.addPass(createConvertHWToBTOR2Pass(os));
-
     return pm.run(module);
 }
 
@@ -276,19 +277,6 @@ bool EquivMiterTool::parseOptions(const std::vector<std::string> &args, EquivMit
     }
 
     return true;
-}
-
-void EquivMiterTool::help(const std::string& name, const std::string& description) {
-    log("\n");
-    log("   OVERVIEW: %s - %s\n", name.c_str(), description.c_str());;
-    log("   USAGE:    %s <--specModule name> <--implModule name> [options]\n", name.c_str());
-    log("   OPTIONS:\n");
-    log("       --print-ir ----------------------------- Print IR after pass\n");
-    log("       --specModule <module name> ------------- Specify a named module for the specification circuit\n");
-    log("       --implModule <module name> ------------- Specify a named module for the implementation circuit\n");
-    log("       --mitermode ---------------------------- MiterMode [smtlib, aiger, btor2], default is smtlib\n");
-    log("       -o ------------------------------------- Output filename\n");
-    log("\n\n");
 }
 
 XUANSONG_NAMESPACE_HEADER_END // namespace XuanSong

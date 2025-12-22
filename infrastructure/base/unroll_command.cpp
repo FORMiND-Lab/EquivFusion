@@ -11,7 +11,7 @@ XUANSONG_NAMESPACE_HEADER_START
 
 struct UnrollOptions {
     unsigned steps = 1;
-    ModuleType moduleType {ModuleType::UNKNOWN};
+    ModuleTypeEnum moduleType {ModuleTypeEnum::UNKNOWN};
 };
 
 struct UnrollCommand : public Command {
@@ -60,12 +60,12 @@ bool UnrollCommand::parseOptions(const std::vector<std::string> &args, UnrollOpt
         if ((args[idx] == "--steps" || args[idx] == "-steps") && (idx + 1 < args.size())) {
             opts.steps = std::stoi(args[++idx]);
         } if (args[idx] == "--spec" || args[idx] == "-spec") {
-            opts.moduleType = ModuleType::SPEC;
+            opts.moduleType = ModuleTypeEnum::SPEC;
         } else if (args[idx] == "--impl" || args[idx] == "-impl") {
-            opts.moduleType = ModuleType::IMPL;
+            opts.moduleType = ModuleTypeEnum::IMPL;
         }
     }
-    if (opts.moduleType == ModuleType::UNKNOWN) {
+    if (opts.moduleType == ModuleTypeEnum::UNKNOWN) {
         log("[unroll]: please specify module type.\n");
         return false;
     }

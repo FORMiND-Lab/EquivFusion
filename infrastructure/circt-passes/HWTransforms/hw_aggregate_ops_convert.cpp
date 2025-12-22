@@ -34,28 +34,8 @@ struct HWArraySliceOpConversion : OpRewritePattern<hw::ArraySliceOp> {
     using OpRewritePattern<hw::ArraySliceOp>::OpRewritePattern;
 
     LogicalResult matchAndRewrite(hw::ArraySliceOp op, PatternRewriter &rewriter) const override {
-        auto inputArrayType = cast<hw::ArrayType>(op.getInput().getType());
-        auto resArrayType = cast<hw::ArrayType>(op.getType());
-
-        /**
-         * Special hw.array_slice: need hw.array_get  [CIRCT version: firtool-1.132.0]
-         * Verilog:
-         *      module array(input in_2dim[1:0][1:0], input idx, output o);
-         *          assign o = in_2dim[idx][idx];
-         *      endmodule
-         * MLIR:
-         *      module {
-         *          hw.module @array(in %in_2dim : !hw.array<2xarray<2xi1>>, in %idx : i1, out o : i1) {
-         *              %0 = hw.array_slice %in_2dim[%idx] : (!hw.array<2xarray<2xi1>>) -> !hw.array<2xi1>
-         *              %1 = hw.array_get %0[%idx] : !hw.array<2xi1>, i1
-         *              hw.output %1 : i1
-         *          }
-         *      }
-        */
-        if (resArrayType == inputArrayType.getElementType()) {
-            rewriter.replaceOpWithNewOp<hw::ArrayGetOp>(op, op.getInput(), op.getLowIndex());
-            return success();
-        }
+        auto inputArrayType = hw::type_cast<hw::ArrayType>(op.getInput().getType());
+        auto resArrayType = hw::type_cast<hw::ArrayType>(op.getType());
 
         assert(inputArrayType.getElementType() == resArrayType.getElementType());
         size_t sliceSize = resArrayType.getNumElements();
@@ -94,7 +74,7 @@ struct HWStructExplodeOpConversion : OpRewritePattern<hw::StructExplodeOp> {
 
     LogicalResult matchAndRewrite(hw::StructExplodeOp op, PatternRewriter &rewriter) const override {
         auto opResults = op.getResults();
-        auto elements = type_cast<hw::StructType>(op.getInput().getType()).getElements();
+        auto elements = hw::type_cast<hw::StructType>(op.getInput().getType()).getElements();
         assert(opResults.size() == elements.size());
 
         SmallVector<Value> newResults;
@@ -122,7 +102,7 @@ struct HWStructInjectOpConversion : OpRewritePattern<hw::StructInjectOp> {
 
     LogicalResult
     matchAndRewrite(hw::StructInjectOp op, PatternRewriter &rewriter) const override {
-        auto structType = cast<hw::StructType>(op.getInput().getType());
+        auto structType = hw::type_cast<hw::StructType>(op.getInput().getType());
         auto fieldName = op.getFieldName();
         SmallVector<Value> fieldValues;
         for (const auto &field : structType.getElements()) {
