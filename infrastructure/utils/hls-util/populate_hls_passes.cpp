@@ -43,8 +43,8 @@ void populateHLSPasses(mlir::PassManager &pm) {
 
     // Convert multi-dimensional memref to one-dimensional memref.
     pm.addPass(mlir::createCanonicalizerPass());
-    pm.addPass(circt::createFlattenMemRefPass());
-    pm.addPass(circt::createFlattenMemRefCallsPass());
+    pm.addPass(circt::createEquivFusionFlattenMemRefPass());
+    pm.addPass(circt::createEquivFusionFlattenMemRefCallsPass());
 
     pm.enableVerifier(false);
     // Convert all index typed values to an i32 integer.
