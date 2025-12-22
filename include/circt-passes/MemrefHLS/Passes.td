@@ -40,7 +40,27 @@ def EquivFusionGetGlobalToAllocPass : Pass<"equivfusion-get-global-to-alloc", "m
     let dependentDialects = ["mlir::func::FuncDialect", "mlir::arith::ArithDialect", "mlir::affine::AffineDialect", "mlir::memref::MemRefDialect"];
 }
  
+def EquivFusionFlattenMemRefPass : Pass<"equivfusion-flatten-memref", "::mlir::ModuleOp"> {
+  let summary = "Flatten memrefs";
+  let description = [{
+    Flattens multidimensional memories and accesses to them into
+    single-dimensional memories.}];
 
+  let dependentDialects = ["mlir::memref::MemRefDialect"];
+}
+
+def EquivFusionFlattenMemRefCallsPass : Pass<"equivfusion-flatten-memref-calls", "::mlir::ModuleOp"> {
+  let summary = "Flatten memref calls";
+  let description = [{
+    Flattens calls to functions which have multidimensional memrefs as arguments.
+    This is done by casting memref arguments through memref.subview operations.
+    Any called functions which had their type signatures changes will be replaced
+    by a private function definition with the new signature.
+    It is up to users of this pass to define how these rewritten functions are
+    to be implemented.}];
+
+  let dependentDialects = ["mlir::memref::MemRefDialect"];
+}
 
 
 #endif // EQUIVFUSION_MEMREF_HLS_PASSES_TD

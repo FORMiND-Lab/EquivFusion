@@ -11,6 +11,8 @@ add_circt_library(EquivFusionMemrefHLS
     MLIRArithDialect
     MLIRAffineDialect
     MLIRMemRefDialect
+    MLIRControlFlowDialect
+    MLIRControlFlowTransforms
     MLIRTransformUtils
     MLIRIR
 
