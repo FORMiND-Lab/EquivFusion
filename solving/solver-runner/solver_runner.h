@@ -18,7 +18,6 @@ private:
         return it != solvers.end() ? it->second.get() : nullptr;
     }
 
-    static int run(Solver* solver, const std::string &command);
 public:
     static int run(const std::string &solverName, const std::string &inputFile, const std::string& options);
 };

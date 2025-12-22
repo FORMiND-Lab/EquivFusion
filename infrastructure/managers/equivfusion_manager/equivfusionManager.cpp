@@ -49,34 +49,34 @@ mlir::ModuleOp EquivFusionManager::getMergedModuleOp() const {
     return mergedModuleOp_ ? mergedModuleOp_.get() : nullptr;
 }
 
-void EquivFusionManager::setModuleOp(mlir::OwningOpRef<mlir::ModuleOp> &module, ModuleType moduleType) {
+void EquivFusionManager::setModuleOp(mlir::OwningOpRef<mlir::ModuleOp> &module, ModuleTypeEnum moduleType) {
     switch (moduleType) {
-        case ModuleType::UNKNOWN:
-            assert(0 && "Invalid module type: UNKNOWN");
-            break;
-        case ModuleType::SPEC:
+        case ModuleTypeEnum::SPEC:
             setSpecModuleOp(module);
             break;
-        case ModuleType::IMPL:
+        case ModuleTypeEnum::IMPL:
             setImplModuleOp(module);
             break;
-        case ModuleType::MITER:
+        case ModuleTypeEnum::MITER:
             setMergedModuleOp(module);
+            break;
+        case ModuleTypeEnum::UNKNOWN:
+            assert(0 && "Invalid module type: UNKNOWN");
             break;
     }
 }
 
-mlir::ModuleOp EquivFusionManager::getModuleOp(ModuleType moduleType) {
+mlir::ModuleOp EquivFusionManager::getModuleOp(ModuleTypeEnum moduleType) {
     switch (moduleType) {
-        case ModuleType::UNKNOWN:
-            assert(0 && "Invalid module type: UNKNOWN");
-            return nullptr;
-        case ModuleType::SPEC:
+        case ModuleTypeEnum::SPEC:
             return getSpecModuleOp();
-        case ModuleType::IMPL:
+        case ModuleTypeEnum::IMPL:
             return getImplModuleOp();
-        case ModuleType::MITER:
+        case ModuleTypeEnum::MITER:
             return getMergedModuleOp();
+        default:
+            assert(0 && "Invalid module type");
+            return nullptr;
     }
 }
 

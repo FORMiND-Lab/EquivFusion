@@ -2,6 +2,7 @@
 #define EQUIVFUSION_EQUIV_MITER_H
 
 #include "infrastructure/utils/namespace_macro.h"
+#include "infrastructure/managers/equivfusion_manager/equivfusionManager.h"
 
 #include "mlir/IR/MLIRContext.h"
 #include "mlir/IR/BuiltinOps.h"
@@ -13,10 +14,6 @@
 
 XUANSONG_NAMESPACE_HEADER_START
 
-enum struct DesignTypeEnum {
-    SPEC,
-    IMPL,
-};
 
 struct EquivMiterToolOptions {
     bool printIR {false};
@@ -33,22 +30,22 @@ public:
 
 private:
     static bool parseOptions(const std::vector<std::string>& args, EquivMiterToolOptions& opts);
-    static bool mergeModules(mlir::ModuleOp dest, mlir::ModuleOp src, EquivMiterToolOptions& opts, DesignTypeEnum designType);
+    static bool mergeModules(mlir::ModuleOp dest, mlir::ModuleOp src, EquivMiterToolOptions& opts, ModuleTypeEnum moduleType);
 
 private:
     static void populatePreparePasses(mlir::PassManager& pm);
 
-    static llvm::LogicalResult miterToSMT(mlir::PassManager& pm, mlir::ModuleOp module, llvm::raw_ostream& os,
-                                          const circt::equivfusion::EquivFusionMiterOptions& miterOpts);
-    static llvm::LogicalResult miterToAIGER(mlir::PassManager& pm, mlir::ModuleOp module, llvm::raw_ostream& os,
-                                            const circt::equivfusion::EquivFusionMiterOptions& miterOpts);
-    static llvm::LogicalResult miterToBTOR2(mlir::PassManager& pm, mlir::ModuleOp module, llvm::raw_ostream& os,
-                                            const circt::equivfusion::EquivFusionMiterOptions& miterOpts);
+    static llvm::LogicalResult executeMiterToSMT(mlir::PassManager &pm, mlir::ModuleOp module, llvm::raw_ostream &os,
+                                                 const circt::equivfusion::EquivFusionMiterOptions &miterOpts);
+
+    static llvm::LogicalResult executeMiterToAIGER(mlir::PassManager &pm, mlir::ModuleOp module, llvm::raw_ostream &os,
+                                                   const circt::equivfusion::EquivFusionMiterOptions &miterOpts);
+
+    static llvm::LogicalResult executeMiterToBTOR2(mlir::PassManager &pm, mlir::ModuleOp module, llvm::raw_ostream &os,
+                                                   const circt::equivfusion::EquivFusionMiterOptions &miterOpts);
 
 public:
-    static void help(const std::string& name, const std::string& description);
-
-    static bool run(const std::vector<std::string>& args);
+    static bool executeMiter(const std::vector<std::string>& args);
 };
 
 XUANSONG_NAMESPACE_HEADER_END // namespace XuanSong

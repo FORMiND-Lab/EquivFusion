@@ -3,3 +3,6 @@ __pycache__
 
 # dependent solvers
 solving/dep_solvers
+
+# dependent circt
+circt_prebuild

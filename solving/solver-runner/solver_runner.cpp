@@ -17,11 +17,6 @@ void SolverRunner::initializeSolvers() {
     }
 }
 
-int SolverRunner::run(Solver* solver, const std::string &command) {
-    assert(solver);
-    return solver->run(command);
-}
-
 int SolverRunner::run(const std::string &solverName, const std::string &inputFile, const std::string& options) {
     initializeSolvers();
 
@@ -33,7 +28,7 @@ int SolverRunner::run(const std::string &solverName, const std::string &inputFil
     assert(solverName == solver->getName());
 
     std::string command = solverName + " " + options + " " + inputFile;
-    return run(solver, command);
+    return solver->run(inputFile, options);
 }
 
 } // namespace XuanSong

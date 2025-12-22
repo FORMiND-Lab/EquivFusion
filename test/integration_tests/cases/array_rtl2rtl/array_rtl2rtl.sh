@@ -21,7 +21,6 @@ equiv_fusion -p "read_v -spec -top top array.sv" \
 #CHECK: UNSATISFIABLE
 equiv_fusion -p "read_v -spec -top top array.sv" \
              -p "read_v -impl -top top array.sv" \
-             -p "equiv_miter -specModule top -implModule top -mitermode aiger -o $OUTPUT_DIR/miter.aiger"
-aigtocnf "$OUTPUT_DIR/miter.aiger" "$OUTPUT_DIR/miter.cnf"
-equiv_fusion -p "solver_runner --solver kissat --inputfile $OUTPUT_DIR/miter.cnf"
+             -p "equiv_miter -specModule top -implModule top -mitermode aiger -o $OUTPUT_DIR/miter.aiger" \
+             -p "solver_runner --solver kissat --inputfile $OUTPUT_DIR/miter.aiger"
 

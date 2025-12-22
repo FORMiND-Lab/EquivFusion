@@ -14,12 +14,18 @@ namespace XuanSong {
 class Solver {
 public:
     virtual ~Solver() = default;
-    virtual int run(const std::string &command) = 0;
+    virtual int run(const std::string &inputFile, const std::string &options) = 0;
     virtual std::string getName() const = 0;
 
 protected:
     int executeCommand(const std::string &command) {
         return system(command.c_str());
+    }
+
+    /// Convert AIG to CNF
+    int convertToCNF(const std::string &aigFile, const std::string &cnfFile) {
+        std::string command = "aigtocnf " + aigFile + " " + cnfFile;
+        return executeCommand(command);
     }
 };
 
@@ -28,7 +34,7 @@ protected:
 class ClassName : public Solver { \
 public: \
     std::string getName() const override { return SolverName; } \
-    int run(const std::string &command) override; \
+    int run(const std::string &inputFile, const std::string &options) override; \
 };
 
 SOLVER_LIST
