@@ -14,16 +14,36 @@ EquivFusion: Unifying Formal Verification from Algorithms to Netlists for High-E
 - Mengxia Tao   <taomengxia@nctieda.com>
 
 # Build
+To get started quickly, run the following commands:
+
 Linux/MacOS
 ```bash
+# Clone the the repository.
+git clone https://github.com/FORMiND-Lab/EquivFusion.git
 cd EquivFusion
+
+# Configure the build.
 mkdir build
 cd build
 cmake .. -G Ninja
 ninja
+
+# Install solvers.
+# This command automatically retrieves and builds dependencies such as aiger, bitwuzla, kissat, and boolector. 
+# The resulting binaries are installed in the EquivFusion/build/bin directory.
+ninja install_solvers
+
+# Add 'EquivFusion/build/bin' to your PATH environment variable
+export PATH="$PWD/bin/:$PATH"
 ```
 # Dependencies
 
-- **readline>=8.2** 若readline库的头文件或者库文件不在系统搜索路径中，在执行cmake时可以通过`-DREADLINE_INCLUDE_ABSOLUTE_DIRECTORY`指定存放readline文件夹的目录的绝对路径，readline文件夹中存放的是readline相关的头文件。通过`-DREADLINE_LIBRARY_ABSOLUTE_PATH`指定readline库文件的绝对路径。
+If you have `git`, `ninja`, `python3`, `cmake`, and a C++ toolchain installed, you should be able to build EquivFusion. 
+Additionally, there are also some dependencies require configuration:
+
+- **readline:** If `readline` is not in the system search path, you can specify its location during the CMake configuration step. Use `-DREADLINE_INCLUDE_ABSOLUTE_DIRECTORY` for the header files path and `-DREADLINE_LIBRARY_ABSOLUTE_PATH` for the library file path.
+
+- **z3:** Ensure the Z3 solver is in your system `PATH`.
+
 
 
