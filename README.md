@@ -8,6 +8,9 @@
 # EquivFusion
 EquivFusion: Unifying Formal Verification from Algorithms to Netlists for High-Efficiency Signoff.
 
+<img src="docs/includes/img/equivfusion.png">
+
+
 # Contributors
 - Min Li
 - Baoqiz
@@ -35,6 +38,9 @@ ninja install_solvers
 
 # Add 'EquivFusion/build/bin' to your PATH environment variable
 export PATH="$PWD/bin/:$PATH"
+
+# run test
+python3 test/integration_tests/scripts/main.py
 ```
 # Dependencies
 
