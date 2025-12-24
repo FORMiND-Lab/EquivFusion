@@ -1,7 +1,7 @@
 digraph G {
   rankdir = TB
   splines=spline
-  node [shape=box style=filled fillcolor="white" width=1.5]
+  node [shape=box style=filled fillcolor="white" width=2]
   nodesep=0.2 // horizontal compression
   ranksep=0.5 // vertical compression
   compound=true
@@ -13,14 +13,18 @@ digraph G {
       Pytorch
       C
       Chisel
-      Netlist
       SV
   }
 
-  subgraph external_tools {
-    node [shape=octagon fillcolor="#ffff99"]
+
+  subgraph cluster_tools {
+    label = "External Tools"
+    TorchMLIR [label="torch-mlir"]
     Slang
+    Polygeist
+    ScalaCompiler [label="Scala Compiler"]
   }
+
 
   FIRFile [label=".fir" fillcolor="#7fc97f" shape="note"]
 
@@ -61,13 +65,8 @@ digraph G {
   }
 
 
-  Pytorch -> MLIR
-  C -> MLIR
-
-  Chisel -> FIRFile
-  FIRFile -> MLIR
-
-  SV -> Slang [weight=999]
-  Netlist -> Slang [weight=999]
-  Slang -> MLIR
+  Pytorch -> TorchMLIR -> MLIR
+  C -> Polygeist -> MLIR
+  SV -> Slang -> MLIR
+  Chisel -> ScalaCompiler -> FIRFile -> MLIR
 }
