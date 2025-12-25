@@ -9,20 +9,21 @@ digraph G {
   // input fronttends
   subgraph cluster_inputs{
       label = "Inputs"
-      node [shape=octagon fillcolor="#ffff99"]
-      Pytorch
-      C
-      Chisel
+      node [fillcolor="#ffff99"]
       SV
+      Netlist
+      C [label="C/C++"]
+      Pytorch
+      Chisel
+      C [label="C/C++"]
   }
 
 
   subgraph cluster_tools {
     label = "External Tools"
-    TorchMLIR [label="torch-mlir"]
     Slang
     Polygeist
-    ScalaCompiler [label="Scala Compiler"]
+    TorchMLIR [label="torch-mlir"]
   }
 
 
@@ -37,9 +38,14 @@ digraph G {
       subgraph cluster_core_dialects {
           label = "Core dialects"
           node [fillcolor="#ffcc99"]
-          Seq
           HW
+          Seq
           Comb
+          Verif
+
+          Seq -> Comb [label="unroll"]
+          Seq -> HW [label="unroll"]
+          Seq -> Verif [style=invis]
       }
 
       subgraph cluster_outputs {
@@ -48,6 +54,7 @@ digraph G {
           SMTLIB
           AIGER
           BTOR2
+          {rank=same SMTLIB -> AIGER -> BTOR2 [style=invis]}
       }
 
       subgraph cluster_solvers {
@@ -55,18 +62,21 @@ digraph G {
           node [fillcolor="#7fc97f"]
           z3
           bitwuzla
-          boolector
+          btormc
           kissat
+          other [label="..."]
+          {rank=same z3 -> kissat -> bitwuzla -> btormc -> other [style=invis]}
       }
 
-      MLIR -> HW        [lhead=cluster_core_dialects minlen=2]
-      HW -> AIGER       [ltail=cluster_core_dialects lhead=cluster_outputs minlen=2]
-      AIGER -> bitwuzla [ltail=cluster_outputs lhead=cluster_solvers minlen=2]
+      MLIR -> Seq         [lhead=cluster_core_dialects minlen=2]
+      Comb -> AIGER       [ltail=cluster_core_dialects lhead=cluster_outputs minlen=2]
+      AIGER -> bitwuzla   [ltail=cluster_outputs lhead=cluster_solvers minlen=2]
   }
 
 
   Pytorch -> TorchMLIR -> MLIR
   C -> Polygeist -> MLIR
+  Netlist -> Slang
   SV -> Slang -> MLIR
-  Chisel -> ScalaCompiler -> FIRFile -> MLIR
+  Chisel -> FIRFile -> MLIR
 }
