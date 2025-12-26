@@ -1,16 +1,16 @@
-//===- circt-lec.cpp - The circt-lec driver ---------------------*- C++ -*-===//
+//===- circt-lec.cpp - The circt-lec driver ----------------------------*- C++ -*-===//
 //
-// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// Part of the EquivFusion Project, under the Apache License v2.0 with LLVM Exceptions.
 // See https://llvm.org/LICENSE.txt for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
-//===----------------------------------------------------------------------===//
+//===-----------------------------------------------------------------------------===//
 ///
 /// This file initiliazes the 'circt-lec' tool, which interfaces with a logical
 /// engine to allow its user to check whether two input circuit descriptions
 /// are equivalent, and when not provides a counterexample as for why.
 ///
-//===----------------------------------------------------------------------===//
+//===-----------------------------------------------------------------------------===//
 
 #include "circt/Conversion/CombToSMT.h"
 #include "circt/Conversion/HWToSMT.h"

@@ -1,3 +1,11 @@
+//===-----------------------------------------------------------------------------===//
+//
+// Part of the EquivFusion Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+//
+//===-----------------------------------------------------------------------------===//
+
 #include <iostream>
 #include "libs/cxxopts/cxxopts.hpp"
 #include "infrastructure/utils/log-util/log_util.h"
@@ -40,7 +48,7 @@ int main(int argc, char** argv) {
         XuanSong::log("Error parsing options: %s\n", e.what());
         XuanSong::log("Run '%s --help' for help.\n", argv[0]);
         exit(1);
-	}
+    }
 
     for (auto it = commands.begin(); it != commands.end(); it++) {
         XuanSong::runCommand(*it);
