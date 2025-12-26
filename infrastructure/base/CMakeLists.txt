@@ -39,9 +39,6 @@ target_link_libraries(base
     CIRCTSupport
     CIRCTVerif
 
-    EquivFusionSolverRunner
-    EquivFusionToolEquivMiter
-    EquivFusionWrite 
     EquivFusionRemoveRedundantFunc
     EquivFusionConvertCaseToLogicalComparison
     EquivFusionMemrefHLS
@@ -50,6 +47,11 @@ target_link_libraries(base
 
     EquivFusionManager
     EquivFusionUtils
+
+    EquivFusionToolEquivMiter
+    EquivFusionToolReadFIRRTL
+    EquivFusionSolverRunner
+    EquivFusionWrite
 )
 
 llvm_update_compile_flags(base)
