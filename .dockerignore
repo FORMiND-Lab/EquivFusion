@@ -1,0 +1,6 @@
+circt_prebuild
+build
+solving/dep_solvers
+.vscode
+.metals
+.scala-build
