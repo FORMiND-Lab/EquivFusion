@@ -63,17 +63,22 @@ class CommandUtil:
             text=True  # Use text mode instead of binary
         )
 
+        stdout = ""
+        exception_msg = ""
+
         try:
             stdout, _ = process.communicate()
-
-            if process.returncode == 0:
-                return "success"
-            else:
-                # Write error output to check_output
-                check_output.write_text(stdout)
-                return "failed"
+            result = "success" if process.returncode == 0 else "failed"
         except Exception as e:
-            error_msg = (f"Command: {' '.join(cmd)}\n"
-                         f"Exception Error: {str(e)}")
-            check_output.write_text(error_msg)
-            return "failed"
+            exception_msg = f"Exception Error: {str(e)}\n"
+            result = "failed"
+
+        cmd_str = " ".join(cmd)
+        log_content = (
+            f"============================= Executed Command =============================\n{cmd_str}\n\n"
+            f"============================= Result =======================================\n{result}\n\n"
+            f"============================= Exception Info ===============================\n{exception_msg}\n"
+            f"============================= Command Output ===============================\n{stdout}\n\n"
+        )
+        check_output.write_text(log_content)
+        return result
