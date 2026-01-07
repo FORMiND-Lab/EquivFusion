@@ -44,6 +44,8 @@ struct ReadFIRRTLOptions {
     std::vector<std::string> disableLayers;
     LayerSpecializationOpt defaultLayerSpecialization = LayerSpecializationOpt::None;
     std::vector<std::string> selectInstanceChoice;
+
+    circt::firrtl::PreserveAggregate::PreserveMode preserveAggregate = circt::firrtl::PreserveAggregate::None;
 };
 
 static bool parseOptions(const std::vector<std::string> &args, ReadFIRRTLOptions &options) {
@@ -108,6 +110,17 @@ static bool parseOptions(const std::vector<std::string> &args, ReadFIRRTLOptions
         } else if (arg == "--select-instance-choice" || arg == "-select-instance-choice") {
             std::string val = args[++argidx];
             options.disableLayers.emplace_back(val);
+        } else if (arg == "--preserve-aggregate" || arg == "-preserve-aggregate") {
+            std::string val = args[++argidx];
+            if (val == "1d-vec") {
+                options.preserveAggregate = circt::firrtl::PreserveAggregate::OneDimVec;
+            } else if (val == "vec") {
+                options.preserveAggregate = circt::firrtl::PreserveAggregate::Vec;
+            } else if (val == "all") {
+                options.preserveAggregate = circt::firrtl::PreserveAggregate::All;
+            } else if (val == "none") {
+                options.preserveAggregate = circt::firrtl::PreserveAggregate::None;
+            }
         } else {
             options.inputFilename = arg;
             Utils::PathUtil::expandTilde(options.inputFilename);
@@ -189,6 +202,8 @@ static LogicalResult exeuteFirtool(MLIRContext &context, ReadFIRRTLOptions &opti
 
     // TODO(taomengxia: 2025/12/26): use default firtoolOptions,
     firtool::FirtoolOptions firtoolOptions;
+    firtoolOptions.setPreserveAggregate(options.preserveAggregate);
+
     if (failed(firtool::populatePreprocessTransforms(pm, firtoolOptions)))
         return failure();
 
@@ -245,6 +260,7 @@ void help(const std::string &name, const std::string &description) {
     log("               disable ---------------------------- Layers are disabled\n");
     log("               enable ----------------------------- Layers are enabled\n");
     log("       --select-instance-choice ------------------- Options to specialize instance choice, in option=case format\n");
+    log("       --preserve-aggregate ----------------------- Specify input file format\n");
     log("\n");
 }
 
