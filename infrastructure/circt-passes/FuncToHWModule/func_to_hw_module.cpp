@@ -18,6 +18,7 @@
 #include "mlir/IR/Matchers.h"
 #include "mlir/Dialect/MemRef/IR/MemRef.h"
 #include "mlir/IR/Types.h"
+#include "mlir/Analysis/TopologicalSortUtils.h"
 
 #include "llvm/ADT/STLExtras.h"
 #include "llvm/ADT/DenseMap.h"
@@ -554,7 +555,9 @@ EquivFusionFuncToHWModulePass::copyOpFromFuncToHWModule(mlir::OpBuilder &builder
   }
 
   // Clone operations from func to hw.module. 
-  for (auto& op : llvm::make_early_inc_range(funcOp.getBody().front().getOperations())) {
+  mlir::Block &funcBody = funcOp.getBody().front();
+  mlir::sortTopologically(&funcBody);
+  for (auto& op : llvm::make_early_inc_range(funcBody.getOperations())) {
     if (auto returnOp = mlir::dyn_cast<mlir::func::ReturnOp>(op)) {
       // Create hw.output operation for the return values.
       for (mlir::Value returnValue : returnOp.getOperands()) {

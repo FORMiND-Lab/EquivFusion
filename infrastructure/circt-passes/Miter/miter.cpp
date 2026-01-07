@@ -10,7 +10,9 @@
 #include "circt/Dialect/Comb/CombOps.h"
 #include "circt/Dialect/Verif/VerifOps.h"
 #include "mlir/Analysis/TopologicalSortUtils.h"
+#include "mlir/IR/IRMapping.h"
 #include "circt-passes/Miter/Passes.h"
+#include "llvm/ADT/StringMap.h"
 
 
 using namespace mlir;
@@ -23,6 +25,68 @@ namespace equivfusion {
 #include "circt-passes/Miter/Passes.h.inc"
 }
 } // namespace circt
+
+
+namespace {
+struct PortPerimutation {
+    SmallVector<unsigned> inIndexMap;
+    SmallVector<unsigned> outIndexMap;
+};
+} // namespace
+
+
+static FailureOr<PortPerimutation> computePortPermutationByName(hw::HWModuleOp moduleA, hw::HWModuleOp moduleB) {
+    auto moduleAType = moduleA.getModuleType();
+    auto moduleBType = moduleB.getModuleType();
+
+    if (moduleAType.getNumInputs() != moduleBType.getNumInputs() || moduleAType.getNumOutputs() != moduleBType.getNumOutputs()) {
+        moduleA.emitError("module's IO types don't match second modules: ")
+                << moduleA.getModuleType() << " vs " << moduleB.getModuleType();
+
+        return llvm::failure();
+    }
+
+    std::map<std::string, int> moduleAInputNameToIndexMap;
+    std::map<std::string, int> moduleAOutputNameToIndexMap;
+
+    unsigned inIndex = 0;
+    unsigned outIndex = 0;
+
+    for (auto port: moduleAType.getPorts()) {
+        if (port.dir == hw::ModulePort::Direction::Input) {
+            moduleAInputNameToIndexMap[port.name.str()] = inIndex++;
+        } else if (port.dir == hw::ModulePort::Direction::Output) {
+            moduleAOutputNameToIndexMap[port.name.str()] = outIndex++;
+        }
+    }
+
+    PortPerimutation perm;
+    for (auto port: moduleBType.getPorts()) {
+        std::string portName = port.name.str();
+
+        if (port.dir == hw::ModulePort::Direction::Input) {
+            if ((moduleAInputNameToIndexMap.find(portName) == moduleAInputNameToIndexMap.end()) || 
+                (moduleAType.getInputType(moduleAInputNameToIndexMap[portName]) != port.type)) {
+                moduleA.emitError("module's IO types don't match second modules: ")
+                        << moduleA.getModuleType() << " vs " << moduleB.getModuleType();
+                return llvm::failure();
+            }
+
+            perm.inIndexMap.push_back(moduleAInputNameToIndexMap[portName]);
+        } else if (port.dir == hw::ModulePort::Direction::Output) {
+            if ((moduleAOutputNameToIndexMap.find(portName) == moduleAOutputNameToIndexMap.end()) || 
+                (moduleAType.getOutputType(moduleAOutputNameToIndexMap[portName]) != port.type)) {
+                moduleA.emitError("module's IO types don't match second modules: ")
+                        << moduleA.getModuleType() << " vs " << moduleB.getModuleType();
+                return llvm::failure();
+            }
+
+            perm.outIndexMap.push_back(moduleAOutputNameToIndexMap[portName]);
+        }
+    }
+
+    return perm;
+}
 
 
 //===----------------------------------------------------------------------===//
@@ -84,11 +148,56 @@ llvm::LogicalResult EquivFusionMiterPass::constructMiter(OpBuilder &builder, Loc
 llvm::LogicalResult EquivFusionMiterPass::constructMiterForSMTLIB(OpBuilder &builder, Location loc,
                                                                   hw::HWModuleOp moduleA,
                                                                   hw::HWModuleOp moduleB) {
+    auto permOrFail = computePortPermutationByName(moduleA, moduleB);
+    if (failed(permOrFail)) {
+        return llvm::failure();
+    }
+    PortPerimutation perm = *permOrFail;
+
     auto lecOp = verif::LogicEquivalenceCheckingOp::create(builder, loc, false);
     builder.cloneRegionBefore(moduleA.getBody(), lecOp.getFirstCircuit(),
                               lecOp.getFirstCircuit().end());
-    builder.cloneRegionBefore(moduleB.getBody(), lecOp.getSecondCircuit(),
-                              lecOp.getSecondCircuit().end());
+                              
+    Region &srcRegion = moduleB.getBody();
+    Block &srcBlock = srcRegion.front();
+    auto aType = moduleA.getModuleType();
+
+    Region &dstRegion = lecOp.getSecondCircuit();
+    Block *dstBlock = new Block();
+    dstRegion.push_back(dstBlock);
+
+    sortTopologically(&srcBlock);
+
+    for (unsigned i = 0, e = aType.getNumInputs(); i < e; ++i)
+        dstBlock->addArgument(aType.getInputType(i), loc);
+
+    IRMapping mapper;
+    for (unsigned bArg = 0, e = srcBlock.getNumArguments(); bArg < e; ++bArg) {
+        unsigned aArg = perm.inIndexMap[bArg];
+        mapper.map(srcBlock.getArgument(bArg), dstBlock->getArgument(aArg));
+    }
+
+    builder.setInsertionPointToEnd(dstBlock);
+    for (auto& op : llvm::make_early_inc_range(srcBlock.without_terminator())) {
+        mlir::Operation* clonedOp = builder.clone(op, mapper);
+
+        if (!clonedOp) {
+            llvm::errs() << "Failed to clone operation " << op << "\n";
+            return mlir::failure();
+          }
+    }
+        
+    SmallVector<Value> outReordered;
+    outReordered.resize(aType.getNumOutputs());
+    auto *termOp = srcBlock.getTerminator();
+
+
+    for (unsigned i = 0; i < aType.getNumOutputs(); ++i) {
+        outReordered[perm.outIndexMap[i]] = mapper.lookupOrDefault(termOp->getOperand(i));
+    }
+
+    builder.setInsertionPoint(dstBlock, dstBlock->end());
+    hw::OutputOp::create(builder, loc, outReordered);
 
     moduleA->erase();
     if (moduleA != moduleB)
@@ -154,6 +263,12 @@ llvm::LogicalResult EquivFusionMiterPass::constructMiterForBTOR2(OpBuilder &buil
 std::pair<hw::HWModuleOp, Value> EquivFusionMiterPass::createTopModule(OpBuilder &builder, Location loc,
                                                                        hw::HWModuleOp moduleA,
                                                                        hw::HWModuleOp moduleB) {
+    FailureOr<PortPerimutation> permOrFail = computePortPermutationByName(moduleA, moduleB);
+    if (failed(permOrFail)) {
+        return {nullptr, nullptr};
+    }
+    PortPerimutation perm = *permOrFail;
+
     auto moduleAType = moduleA.getModuleType();
     SmallVector<hw::PortInfo> ports;
     for (auto port: moduleAType.getPorts()) {
@@ -172,11 +287,16 @@ std::pair<hw::HWModuleOp, Value> EquivFusionMiterPass::createTopModule(OpBuilder
     builder.setInsertionPointToStart(topModule.getBodyBlock());
 
     Block * bodyBlock = topModule.getBodyBlock();
-    SmallVector<Value> instanceInputs(bodyBlock->args_begin(), bodyBlock->args_end());
+    SmallVector<Value> instanceAInputs(bodyBlock->args_begin(), bodyBlock->args_end());
+    SmallVector<Value> instanceBInputs;
+
+    for (auto i = 0; i < perm.inIndexMap.size(); ++i) {
+        instanceBInputs.push_back(instanceAInputs[perm.inIndexMap[i]]);
+    }
 
     /// Instantiate moduleA/moduleB
-    auto instanceA = hw::InstanceOp::create(builder, loc, moduleA, builder.getStringAttr("instanceA"), instanceInputs);
-    auto instanceB = hw::InstanceOp::create(builder, loc, moduleB, builder.getStringAttr("instanceB"), instanceInputs);
+    auto instanceA = hw::InstanceOp::create(builder, loc, moduleA, builder.getStringAttr("instanceA"), instanceAInputs);
+    auto instanceB = hw::InstanceOp::create(builder, loc, moduleB, builder.getStringAttr("instanceB"), instanceBInputs);
     assert(instanceA.getNumResults() == instanceB.getNumResults() &&
            "Modules must have the same number of outputs.");
 
@@ -188,7 +308,7 @@ std::pair<hw::HWModuleOp, Value> EquivFusionMiterPass::createTopModule(OpBuilder
     unsigned outputNum = instanceA.getNumResults();
     SmallVector<Value> outputsEqual;
     for (unsigned i = 0; i < outputNum; ++i) {
-        Value o1 = instanceA.getResult(i);
+        Value o1 = instanceA.getResult(perm.outIndexMap[i]);
         Value o2 = instanceB.getResult(i);
 
         if (isHWIntegerType(o1.getType())) {
@@ -227,12 +347,13 @@ void EquivFusionMiterPass::runOnOperation() {
     if (!moduleB)
         return signalPassFailure();
 
+/*
     if (moduleA.getModuleType() != moduleB.getModuleType()) {
         moduleA.emitError("module's IO types don't match second modules: ")
                 << moduleA.getModuleType() << " vs " << moduleB.getModuleType();
         return signalPassFailure();
     }
-
+*/
     if (failed(constructMiter(builder, loc, moduleA, moduleB))) {
         return signalPassFailure();
     }
