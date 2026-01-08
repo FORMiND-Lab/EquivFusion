@@ -35,10 +35,6 @@ public:
 
     bool parseOptions(const std::vector<std::string>& args, SetPortCommandOptions& opts);
 
-    void preExecute() override {
-
-    }
-
     void execute(const std::vector<std::string>& args) override {
         SetPortCommandOptions opts;
         if (!parseOptions(args, opts)) {
@@ -47,9 +43,6 @@ public:
 
         EquivFusionManager::getInstance()->addInputPorts(opts.inputPorts);
         EquivFusionManager::getInstance()->addOutputPorts(opts.outputPorts);
-    }
-
-    void postExecute() override {
     }
 
     void help() override {

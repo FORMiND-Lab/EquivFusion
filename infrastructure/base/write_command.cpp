@@ -20,14 +20,8 @@ public:
     WriteCommand(const std::string& name, const std::string& description) : Command(name, description) {}
     ~WriteCommand() = default;
 
-    void preExecute() override {
-    }
-
     void execute(const std::vector<std::string>& args) override {
         Impl::run(args);
-    }
-
-    void postExecute() override {
     }
 
     void help() override {

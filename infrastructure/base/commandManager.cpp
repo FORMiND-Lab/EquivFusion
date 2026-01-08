@@ -56,7 +56,9 @@ void CommandManager::executeCommand(const std::string &name, const std::vector<s
     }
 
     Command *cmd = getCommand(name);
+    cmd->prevExecute();
     cmd->execute(args);
+    cmd->postExecute();
 }
 
 XUANSONG_NAMESPACE_HEADER_END

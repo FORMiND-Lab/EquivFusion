@@ -20,14 +20,8 @@ struct ReadFIRRTLCommand : public Command {
     ReadFIRRTLCommand(ReadFIRRTLCommand &&) = delete;
     ReadFIRRTLCommand &operator=(ReadFIRRTLCommand &&) = delete;
 
-    void preExecute() override {
-    }
-
     void execute(const std::vector<std::string>& args) override {
         ReadFIRRTLTool::execute(args);
-    }
-
-    void postExecute() override {
     }
 
     void help() override {

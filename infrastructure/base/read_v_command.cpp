@@ -102,9 +102,6 @@ struct ReadVCommand : public Command {
     bool parseOptions(const std::vector<std::string>& args, ReadVCommandOptions& opts);
     llvm::LogicalResult executeRTLFlow(const ReadVCommandOptions& opts);
 
-    void preExecute() override {
-    }
-
     void execute(const std::vector<std::string>& args) override {
         ReadVCommandOptions opts;
         if (!parseOptions(args, opts)) {
@@ -127,9 +124,6 @@ struct ReadVCommand : public Command {
 
 
         return;
-    }
-
-    void postExecute() override {
     }
 
     void help() override {

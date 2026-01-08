@@ -23,9 +23,6 @@ public:
     SolverCommand() : Command("solver_runner", "run solver") {}
     ~SolverCommand() = default;
 
-    void preExecute() override {
-    }
-
     void execute(const std::vector<std::string>& args) override {
         SolverCommandOptions opts;
         if (!parseOptions(args, opts)) {
@@ -33,9 +30,6 @@ public:
         }
 
         XuanSong::SolverRunner::run(opts.solver, opts.inputFile, opts.options);
-    }
-
-    void postExecute() override {
     }
 
     void help() override {
