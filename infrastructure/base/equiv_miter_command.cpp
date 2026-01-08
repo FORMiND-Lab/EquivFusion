@@ -16,14 +16,8 @@ public:
     EquivMiterCommand() : Command("equiv_miter", "construct miter for logical equivalence check") {}
     ~EquivMiterCommand() = default;
 
-    void preExecute() override {
-    }
-
     void execute(const std::vector<std::string>& args) override {
         EquivMiterTool::execute(args);
-    }
-
-    void postExecute() override {
     }
 
     void help() override {

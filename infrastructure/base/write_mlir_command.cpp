@@ -31,9 +31,6 @@ public:
     WriteMLIRCommand(const WriteMLIRCommand &) = delete;
     WriteMLIRCommand &operator=(const WriteMLIRCommand &) = delete;
 
-    void preExecute() override {
-    }
-
     void execute(const std::vector<std::string>& args) override {
         WriteMLIROptions opts;
         if (!parseOptions(args, opts)) {
@@ -44,9 +41,6 @@ public:
             log("[write_mlir]: run failed\n\n");
             return;
         }
-    }
-
-    void postExecute() override {
     }
 
     void help() override {

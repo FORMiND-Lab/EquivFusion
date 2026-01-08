@@ -7,7 +7,6 @@
 //===----------------------------------------------------------------------===//
 
 #include "infrastructure/base/command.h"
-#include <iostream>
 
 
 XUANSONG_NAMESPACE_HEADER_START
@@ -30,6 +29,20 @@ std::string Command::getDescription() const {
 
 Command *Command::getNextCommand() const {
     return nextCommand_;
+}
+
+void Command::prevExecute() {
+    startTime_ = std::chrono::steady_clock::now();
+}
+
+void Command::postExecute() {
+    auto endTime = std::chrono::steady_clock::now();
+    executedCommandsInfo_.emplace_back(ExecutedCommandInfo(this, startTime_, endTime));
+}
+
+std::vector<ExecutedCommandInfo> Command::executedCommandsInfo_ = std::vector<ExecutedCommandInfo>();
+std::vector<ExecutedCommandInfo>& Command::getExecutedCommandsInfo() {
+    return executedCommandsInfo_;
 }
 
 

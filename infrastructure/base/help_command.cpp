@@ -20,10 +20,6 @@ public:
     HelpCmd(const HelpCmd &) = delete;
     HelpCmd &operator=(const HelpCmd &) = delete;
 
-    void preExecute() override {
-        
-    }
-
     void execute(const std::vector<std::string> &args) override {
         CommandManager *commandMgr = CommandManager::getInstance();
 
@@ -43,10 +39,6 @@ public:
                 log("Error: Command '%s' not found\n", commandName.c_str());
             }
         }
-    }
-
-    void postExecute() override {
-        
     }
 
     void help() override {

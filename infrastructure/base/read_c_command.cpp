@@ -61,9 +61,6 @@ struct ReadCCommand : public Command {
     llvm::LogicalResult executeHLS(const ReadCCommandOptions& opts);
     llvm::LogicalResult executeCFlow(const ReadCCommandOptions& opts);
 
-    void preExecute() override {
-    }
-
     void execute(const std::vector<std::string>& args) override { 
         ReadCCommandOptions opts;
         if (!parseOptions(args, opts)) {
@@ -78,9 +75,6 @@ struct ReadCCommand : public Command {
 
         EquivFusionManager::getInstance()->clearPorts();
         return;
-    }
-
-    void postExecute() override {
     }
 
     void help() override {

@@ -31,9 +31,6 @@ struct UnrollCommand : public Command {
     UnrollCommand(UnrollCommand &&) = delete;
     UnrollCommand &operator=(UnrollCommand &&) = delete;
 
-    void preExecute() override {
-    }
-
     void execute(const std::vector<std::string> &args) override {
         UnrollOptions opts;
         if (!parseOptions(args, opts)) {
@@ -45,8 +42,6 @@ struct UnrollCommand : public Command {
         }
     }
 
-    void postExecute() override {
-    }
     void help() override {
         log("\n");
         log("   OVERVIEW: %s - %s\n", getName().c_str(), getDescription().c_str());

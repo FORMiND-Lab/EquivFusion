@@ -22,21 +22,12 @@ public:
     HistoryCmd(const HistoryCmd &) = delete;
     HistoryCmd &operator=(const HistoryCmd &) = delete;
 
-    void preExecute() override {
-
-    }
-
     void execute(const std::vector<std::string> &args) override {
         for(HIST_ENTRY **list = history_list(); *list != NULL; list++) {
             log("%s\n", (*list)->line);
         }
 
         log("\n");
-    }
-
-    void postExecute() override {
-        
-
     }
 
     void help() override { 
