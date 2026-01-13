@@ -6,61 +6,62 @@ CASE_DIR=$(dirname "$(realpath "$0")")
 OUTPUT_DIR=${CASE_LOG_PATH:-.}
 
 
+run_equivalence_test() {
+    local impl_file="$1"
+    local miter_mode="$2"
+    local solver_name="$3"
+
+    local output_suffix
+    case "$miter_mode" in
+        smtlib) output_suffix="smt" ;;
+        btor2) output_suffix="btor2" ;;
+        aiger) output_suffix="aiger" ;;
+       *)
+            echo "错误: 未知的 mitermode: $miter_mode"
+            return 1
+            ;;
+    esac
+    local output_file="$OUTPUT_DIR/miter.$output_suffix"
+
+    echo "--------------------------------------------------------------- Run $solver_name with $output_suffix"
+
+    equiv_fusion -p "read_firrtl -spec -top Dot64 Dot64.fir --scalarize-public-modules false --scalarize-public-modules false --preserve-aggregate all" \
+                 -p "read_c -impl -top Dot64 $impl_file" \
+                 -p "equiv_miter -specModule Dot64 -implModule Dot64 -mitermode $miter_mode -o $output_file" \
+                 -p "solver_runner --solver $solver_name --inputfile $output_file" \
+                 -p "show"
+
+    echo -e "\n\n"
+}
+
+
 echo "====================================================================== Equal ========================================================================"
 
-echo "--------------------------------------------------------------- Run bitwuzla with smt ---------------------------------------------------------------"
 #CHECK: {{[[:space:]]|^}}unsat{{[[:space:]]|$}}
-equiv_fusion -p "read_c -spec -top Dot64 Dot64.mlir" \
-             -p "read_firrtl -impl -top Dot64 Dot64.fir --scalarize-public-modules false --scalarize-public-modules false --preserve-aggregate all" \
-             -p "equiv_miter -specModule Dot64 -implModule Dot64 -mitermode smtlib -o $OUTPUT_DIR/miter.smt" \
-             -p "solver_runner --solver bitwuzla --inputfile $OUTPUT_DIR/miter.smt"
-echo -e "\n\n"
+run_equivalence_test "Dot64.mlir", "smtlib" "z3"
 
+#CHECK: {{[[:space:]]|^}}unsat{{[[:space:]]|$}}
+run_equivalence_test "Dot64.mlir", "smtlib" "bitwuzla"
 
-echo "--------------------------------------------------------------- Run bitwuzla with btor2 -------------------------------------------------------------"
 #CHECK: {{[[:space:]]|^}}unsatisfiable.{{[[:space:]]|$}}
-equiv_fusion -p "read_c -spec -top Dot64 Dot64.mlir" \
-             -p "read_firrtl -impl -top Dot64  Dot64.fir --scalarize-public-modules false --scalarize-public-modules false --preserve-aggregate all" \
-             -p "equiv_miter -specModule Dot64 -implModule Dot64 -mitermode btor2 -o $OUTPUT_DIR/miter.btor2" \
-             -p "solver_runner --solver bitwuzla --inputfile $OUTPUT_DIR/miter.btor2"
-echo -e "\n\n"
+run_equivalence_test "Dot64.mlir", "btor2" "bitwuzla"
 
-
-echo "--------------------------------------------------------------- Run kissat  -------------------------------------------------------------------------"
 #CHECK: {{[[:space:]]|^}}UNSATISFIABLE{{[[:space:]]|$}}
-equiv_fusion -p "read_c -spec -top Dot64 Dot64.mlir" \
-             -p "read_firrtl -impl -top Dot64  Dot64.fir --scalarize-public-modules false --scalarize-public-modules false --preserve-aggregate all" \
-             -p "equiv_miter -specModule Dot64 -implModule Dot64 -mitermode aiger -o $OUTPUT_DIR/miter.aiger" \
-             -p "solver_runner --solver kissat --inputfile $OUTPUT_DIR/miter.aiger"
-echo -e "\n\n"
+run_equivalence_test "Dot64.mlir", "aiger" "kissat"
 
 
 
 echo "====================================================================== Unequal ======================================================================"
 
 
-echo "--------------------------------------------------------------- Run bitwuzla with smt ---------------------------------------------------------------"
 #CHECK: {{[[:space:]]|^}}sat{{[[:space:]]|$}}
-equiv_fusion -p "read_c -spec -top Dot64 Dot64_Unequal.mlir" \
-             -p "read_firrtl -impl -top Dot64 Dot64.fir --scalarize-public-modules false --scalarize-public-modules false --preserve-aggregate all" \
-             -p "equiv_miter -specModule Dot64 -implModule Dot64 -mitermode smtlib -o $OUTPUT_DIR/miter.smt" \
-             -p "solver_runner --solver bitwuzla --inputfile $OUTPUT_DIR/miter.smt"
-echo -e "\n\n"
+run_equivalence_test "Dot64_truncation.mlir", "smtlib" "z3"
 
+#CHECK: {{[[:space:]]|^}}sat{{[[:space:]]|$}}
+run_equivalence_test "Dot64_truncation.mlir", "smtlib" "bitwuzla"
 
-echo "--------------------------------------------------------------- Run bitwuzla with btor2 -------------------------------------------------------------"
 #CHECK: {{[[:space:]]|^}}satisfiable.{{[[:space:]]|$}}
-equiv_fusion -p "read_c -spec -top Dot64 Dot64_Unequal.mlir" \
-             -p "read_firrtl -impl -top Dot64  Dot64.fir --scalarize-public-modules false --scalarize-public-modules false --preserve-aggregate all" \
-             -p "equiv_miter -specModule Dot64 -implModule Dot64 -mitermode btor2 -o $OUTPUT_DIR/miter.btor2" \
-             -p "solver_runner --solver bitwuzla --inputfile $OUTPUT_DIR/miter.btor2"
-echo -e "\n\n"
+run_equivalence_test "Dot64_truncation.mlir", "btor2" "bitwuzla"
 
-
-echo "--------------------------------------------------------------- Run kissat  -------------------------------------------------------------------------"
 #CHECK: {{[[:space:]]|^}}SATISFIABLE{{[[:space:]]|$}}
-equiv_fusion -p "read_c -spec -top Dot64 Dot64_Unequal.mlir" \
-             -p "read_firrtl -impl -top Dot64  Dot64.fir --scalarize-public-modules false --scalarize-public-modules false --preserve-aggregate all" \
-             -p "equiv_miter -specModule Dot64 -implModule Dot64 -mitermode aiger -o $OUTPUT_DIR/miter.aiger" \
-             -p "solver_runner --solver kissat --inputfile $OUTPUT_DIR/miter.aiger"
-echo -e "\n\n"
+run_equivalence_test "Dot64_truncation.mlir", "aiger" "kissat"

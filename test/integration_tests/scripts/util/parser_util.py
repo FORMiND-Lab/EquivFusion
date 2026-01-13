@@ -8,7 +8,7 @@ DEFAULT_CIRCT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../
 DEFAULT_CASES_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../..", "cases"))
 DEFAULT_LOG_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../../"))
 DEFAULT_THREADS = 4
-DEFAULT_TIMEOUT = 300
+DEFAULT_TIMEOUT = 1200
 
 class ParserUtil:
     @staticmethod
