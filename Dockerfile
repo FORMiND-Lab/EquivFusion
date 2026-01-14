@@ -23,6 +23,21 @@ RUN apt-get update && apt-get install -y \
     z3 \
     && rm -rf /var/lib/apt/lists/*
 
+RUN apt-get update && apt-get install -y gnupg \
+    && mkdir -p /etc/apt/keyrings \
+    && curl -fsSL "https://keyserver.ubuntu.com/pks/lookup?op=get&search=0x2EE0EA64E40A89B84B2DF73499E82A75642AC823" \
+      | gpg --dearmor -o /etc/apt/keyrings/sbt.gpg \
+    && echo "deb [signed-by=/etc/apt/keyrings/sbt.gpg] https://repo.scala-sbt.org/scalasbt/debian all main" \
+      > /etc/apt/sources.list.d/sbt.list \
+    && echo "deb [signed-by=/etc/apt/keyrings/sbt.gpg] https://repo.scala-sbt.org/scalasbt/debian /" \
+      > /etc/apt/sources.list.d/sbt_old.list \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN apt-get update && apt-get install -y \
+    openjdk-17-jdk \
+    sbt \
+    && rm -rf /var/lib/apt/lists/*
+
 WORKDIR /app
 
 COPY . /app/EquivFusion
