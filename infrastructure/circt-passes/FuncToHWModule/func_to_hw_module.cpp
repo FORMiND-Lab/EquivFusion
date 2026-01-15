@@ -610,6 +610,10 @@ EquivFusionFuncToHWModulePass::copyOpFromFuncToHWModule(mlir::OpBuilder &builder
           return mlir::failure();
         }
 
+        unsigned int idx = constOp.getValue().getZExtValue();
+        idx = arrayType.getNumElements() - idx - 1;
+        index = builder.create<circt::hw::ConstantOp>(loadOp.getLoc(), builder.getI32Type(), idx);
+
         // Adjust index bitwidth to match array size requirement
         // hw.array_get requires: index_bitwidth = ceil(log2(array_size))
         size_t arraySize = arrayType.getNumElements();
@@ -690,6 +694,7 @@ EquivFusionFuncToHWModulePass::copyOpFromFuncToHWModule(mlir::OpBuilder &builder
         if (auto constOp = indexVal.getDefiningOp<circt::hw::ConstantOp>()) {
           index = constOp.getValue();
           idx = index.getZExtValue();
+          idx = info.size - idx - 1;
           info.indexToValueMap[idx] = value;
         } else {
           llvm::errs() << "The index of the memref.store operation is not a constant.\n";
