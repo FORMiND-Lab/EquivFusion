@@ -1,21 +1,14 @@
 #!/usr/bin/bash
 
-SEARCH_PATHS=(
-    "/usr/lib"
-    "/usr/lib64"
-    "/usr/local/lib"
-    "/usr/local/lib64"
-)
 
-SCRIPT_PATH=$(realpath "$0")
-SCRIPT_DIR=$(dirname "$SCRIPT_PATH")
+set -euo pipefail
 
-Z3_PATH=$(find ${SEARCH_PATHS[@]} -name "libz3.so" -print -quit 2>/dev/null)
+CASE_DIR=$(dirname "$(realpath "$0")")
+OUTPUT_DIR=${CASE_LOG_PATH:-.}
 
-if [ -z "$Z3_PATH" ]; then
-    echo "Error: Z3 library not found"
-    exit 1
-fi
+#CHECK: unsat
+equiv_fusion -p "read_c -spec -top foo1 input.mlir" \
+             -p "read_c -impl -top foo2 input.mlir" \
+             -p "equiv_miter -specModule foo1 -implModule foo2 -mitermode smtlib -o $OUTPUT_DIR/miter.smt" \
+             -p "solver_runner --solver z3 --inputfile $OUTPUT_DIR/miter.smt"
 
-EquivFusionLEC  $SCRIPT_DIR/input.mlir -c1 foo1 --c2 foo2 --run --shared-libs="$Z3_PATH"
-#CHECK: c1 == c2

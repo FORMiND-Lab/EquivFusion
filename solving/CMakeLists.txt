@@ -18,7 +18,7 @@ macro(create_solver_target SOLVER_NAME)
 endmacro()
 
 # Config Binaries for each solver
-set(SUPPORTED_SOLVERS aiger kissat boolector bitwuzla)
+set(SUPPORTED_SOLVERS aiger kissat boolector bitwuzla z3)
 
 # Add single solver target
 set(SOLVER_TARGETS "")

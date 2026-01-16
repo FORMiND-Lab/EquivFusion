@@ -6,6 +6,7 @@ declare -A SOLVERS_DESC=(
     [aiger]="Install aiger (AIGER format tools)"
     [boolector]="Install boolector (SMT solver for bit-vectors)"
     [bitwuzla]="Install bitwuzla (SMT solver)"
+    [z3]="Install z3 (SMT solver)"
 )
 
 # Supported solvers

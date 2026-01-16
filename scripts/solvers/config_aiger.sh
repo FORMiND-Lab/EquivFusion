@@ -2,7 +2,7 @@
 
 declare -A CONFIG_aiger=(
     [repo]="arminbiere/aiger"
-    [commit_id]="57594d2f95b286289da02ea37e2c3c934893dff5"
+    [commit_id]="57594d2f95b286289da02ea37e2c3c934893dff5"  # Release 1.9.20
 )
 
 build_aiger() {

@@ -26,7 +26,7 @@ cmake .. -G Ninja
 ninja
 
 # Install solvers.
-# This command automatically retrieves and builds dependencies such as aiger, bitwuzla, kissat, and boolector. 
+# This command automatically retrieves and builds dependencies such as aiger, bitwuzla, kissat, boolector and z3.
 # The resulting binaries are installed in the EquivFusion/build/bin directory.
 ninja install_solvers
 
@@ -42,8 +42,6 @@ If you have `git`, `ninja`, `python3`, `cmake`, and a C++ toolchain installed, y
 Additionally, there are also some dependencies require configuration:
 
 - **readline:** If `readline` is not in the system search path, you can specify its location during the CMake configuration step. Use `-DREADLINE_INCLUDE_ABSOLUTE_DIRECTORY` for the header files path and `-DREADLINE_LIBRARY_ABSOLUTE_PATH` for the library file path.
-
-- **z3:** Ensure the Z3 solver is in your system `PATH`.
 
 
 
