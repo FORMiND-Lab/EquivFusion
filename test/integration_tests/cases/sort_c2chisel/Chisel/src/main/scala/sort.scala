@@ -64,14 +64,14 @@ class Sort(width: Int = 8) extends RawModule {
   val (o4, o5) = CAS(s3_4_t2, s3_5_t2)
   val (o6, o7) = CAS(s3_6_t2, s3_7_t2)
 
-  output(0) := o7
-  output(1) := o6
-  output(2) := o5
-  output(3) := o4
-  output(4) := o3
-  output(5) := o2
-  output(6) := o1
-  output(7) := o0
+  output(0) := o0
+  output(1) := o1
+  output(2) := o2
+  output(3) := o3
+  output(4) := o4
+  output(5) := o5
+  output(6) := o6
+  output(7) := o7
 }
 
 object Sort extends App {
