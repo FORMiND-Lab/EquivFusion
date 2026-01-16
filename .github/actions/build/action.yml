@@ -22,6 +22,5 @@ runs:
         ninja
         if [ "${{ inputs.install-solvers }}" = "true" ]; then
           ninja install_z3
-#          ninja install_solvers
         fi
         
