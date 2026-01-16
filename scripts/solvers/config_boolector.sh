@@ -2,7 +2,7 @@
 
 declare -A CONFIG_boolector=(
     [repo]="Boolector/boolector"
-    [commit_id]="393cdfba3735d334bb4e6525500b8a0280dd41e6"
+    [commit_id]="393cdfba3735d334bb4e6525500b8a0280dd41e6"  # Boolector 3.2.4
 )
 
 build_boolector() {

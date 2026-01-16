@@ -8,8 +8,3 @@ runs:
       run: |
         pip install meson   # for install bitwuzla
 
-    - name: Install z3
-      shell: bash
-      run: |
-        sudo apt update
-        sudo apt install libz3-dev z3   # install z3

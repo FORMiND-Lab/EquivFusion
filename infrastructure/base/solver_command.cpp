@@ -48,11 +48,12 @@ private:
 
 bool SolverCommand::parseOptions(const std::vector<std::string>& args, SolverCommandOptions& opts) {
     for (size_t argidx = 0; argidx < args.size(); argidx++) {
-        if (args[argidx] == "--solver" && argidx + 1 < args.size()) {
+        auto arg = args[argidx];
+        if ((arg == "--solver" || arg == "-solver") && argidx + 1 < args.size()) {
             opts.solver = args[++argidx];
-        } else if (args[argidx] == "--inputfile" && argidx + 1 < args.size()) {
+        } else if ((arg == "--inputfile" || arg == "-inputfile") && argidx + 1 < args.size()) {
             opts.inputFile = args[++argidx];
-        } else if (args[argidx] == "--opts" && argidx + 1 < args.size()) {
+        } else if ((arg == "--opts" || arg == "-opts") && argidx + 1 < args.size()) {
             opts.options = args[++argidx];
         }
     }

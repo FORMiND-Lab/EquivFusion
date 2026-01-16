@@ -2,7 +2,7 @@
 
 declare -A CONFIG_bitwuzla=(
     [repo]="bitwuzla/bitwuzla"
-    [commit_id]="61bdc637a291c27597fc04263328ecd29d36cc12"
+    [commit_id]="61bdc637a291c27597fc04263328ecd29d36cc12" # Release 0.8.2
 )
 
 build_bitwuzla() {
