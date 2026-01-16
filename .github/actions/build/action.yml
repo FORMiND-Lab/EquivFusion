@@ -21,6 +21,7 @@ runs:
         cmake .. -DCMAKE_BUILD_TYPE=${{ inputs.build-type }} -G Ninja
         ninja
         if [ "${{ inputs.install-solvers }}" = "true" ]; then
-          ninja install_solvers
+          ninja install_z3
+#          ninja install_solvers
         fi
         
